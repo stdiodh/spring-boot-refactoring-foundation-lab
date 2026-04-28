@@ -1,0 +1,17 @@
+# 자동화와 운영 흐름 체크리스트
+
+## 학생 체크리스트
+
+- [ ] build, test, deploy, verify 순서를 workflow에서 찾을 수 있습니다.
+- [ ] CI와 CD를 이번 코드 기준으로 설명할 수 있습니다.
+- [ ] `deploy.sh`와 `check-deploy.sh` 역할 차이를 말할 수 있습니다.
+- [ ] GitHub Secrets를 workflow 안에서 직접 값 대신 참조로 쓰고 있음을 확인했습니다.
+- [ ] verify 단계가 왜 필요한지 설명할 수 있습니다.
+
+## 강사 / PPT 체크리스트
+
+- [ ] 수동 배포와 자동 배포 차이를 사례로 설명할 수 있습니다.
+- [ ] build → test → deploy → verify 그림이 있는가
+- [ ] workflow와 script 분리 이유를 시연할 수 있는가
+- [ ] verify 단계가 빠졌을 때 생기는 운영 위험을 설명할 수 있는가
+- [ ] Secrets를 코드에 직접 적지 않는 이유를 분명히 말할 수 있는가
