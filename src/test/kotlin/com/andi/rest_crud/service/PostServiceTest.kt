@@ -44,4 +44,10 @@ class PostServiceTest {
             postService.getById(999L)
         }
     }
+
+    @Test
+    fun `TODO create나 update의 보강 흐름을 검증하는 테스트를 추가한다`() {
+        // TODO 1. 공백 제목 같은 실패 케이스를 먼저 추가해보세요.
+        // TODO 2. 또는 update 후 trim된 값이 저장되는 정상 케이스를 추가해도 좋습니다.
+    }
 }

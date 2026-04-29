@@ -59,4 +59,10 @@ class AuthServiceTest {
             authService.login(wrongPasswordRequest)
         }
     }
+
+    @Test
+    fun `TODO signUp 또는 getCurrentUser의 리팩토링 포인트를 검증하는 테스트를 추가한다`() {
+        // TODO 1. signUp 시 이메일 정규화 저장을 검증해보세요.
+        // TODO 2. 또는 현재 사용자 조회 실패 예외를 더 설명적으로 바꾸고 그 테스트를 추가해보세요.
+    }
 }

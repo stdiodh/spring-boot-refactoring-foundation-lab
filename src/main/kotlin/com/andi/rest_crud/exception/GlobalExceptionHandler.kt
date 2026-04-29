@@ -12,6 +12,8 @@ class GlobalExceptionHandler {
     @ExceptionHandler(MethodArgumentNotValidException::class)
     @ResponseStatus(HttpStatus.BAD_REQUEST)
     fun handleValidationException(exception: MethodArgumentNotValidException): ErrorResponse {
+        // TODO 1. handler마다 ErrorResponse를 만드는 코드가 반복되는지 먼저 확인하세요.
+        // TODO 2. 필요하면 공통 helper를 두고 응답 구조를 더 일관되게 정리해보세요.
         val errors = exception.bindingResult.fieldErrors
             .associate { fieldError -> fieldError.field to (fieldError.defaultMessage ?: "잘못된 요청입니다.") }
 
@@ -25,6 +27,7 @@ class GlobalExceptionHandler {
     @ExceptionHandler(PostNotFoundException::class)
     @ResponseStatus(HttpStatus.NOT_FOUND)
     fun handlePostNotFoundException(exception: PostNotFoundException): ErrorResponse {
+        // TODO 3. 이번 시퀀스에서 서비스 레벨 검증 예외를 새로 만들었다면 여기와 함께 연결해보세요.
         return ErrorResponse(
             code = "POST_NOT_FOUND",
             message = exception.message ?: "게시글을 찾을 수 없습니다."
@@ -43,6 +46,7 @@ class GlobalExceptionHandler {
     @ExceptionHandler(InvalidCredentialsException::class)
     @ResponseStatus(HttpStatus.UNAUTHORIZED)
     fun handleInvalidCredentialsException(exception: InvalidCredentialsException): ErrorResponse {
+        // TODO 4. 지금 handler가 설명력이 충분한지도 같이 점검해보세요.
         return ErrorResponse(
             code = "INVALID_CREDENTIALS",
             message = exception.message ?: "인증에 실패했습니다."
