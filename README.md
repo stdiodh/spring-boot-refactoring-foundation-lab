@@ -19,8 +19,8 @@
 ## 브랜치 안내
 
 - `main`: 레포 소개와 브랜치 안내 브랜치
-- `11-implementation`: 학생용 starter 브랜치 예정
-- `11-answer`: 완성 정답 브랜치 예정
+- `11-implementation`: 학생용 starter 브랜치
+- `11-answer`: 완성 정답 브랜치
 
 ## 문서 안내
 
@@ -28,4 +28,4 @@
 - [브랜치 가이드](./docs/branch-guide.md)
 - [시퀀스 맵](./docs/sequence-map.md)
 
-실습 문서는 이후 `11-implementation`, `11-answer` 브랜치에서 시퀀스 기준으로 다시 정리합니다.
+실습 문서는 `11-implementation`, `11-answer` 브랜치에서 시퀀스 기준으로 확인합니다.
