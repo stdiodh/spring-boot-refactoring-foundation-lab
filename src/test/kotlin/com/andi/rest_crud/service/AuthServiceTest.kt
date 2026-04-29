@@ -1,6 +1,8 @@
 package com.andi.rest_crud.service
 
 import com.andi.rest_crud.exception.InvalidCredentialsException
+import com.andi.rest_crud.exception.UserAlreadyExistsException
+import com.andi.rest_crud.exception.UserNotFoundException
 import com.andi.rest_crud.repository.UserRepository
 import com.andi.rest_crud.security.JwtTokenProvider
 import com.andi.rest_crud.security.PasswordConfig
@@ -9,7 +11,9 @@ import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
 import org.junit.jupiter.api.Assertions.assertThrows
 import org.junit.jupiter.api.Test
+import org.mockito.ArgumentCaptor
 import org.mockito.Mockito.`when`
+import org.mockito.Mockito.verify
 import org.mockito.Mockito.mock
 import java.util.Optional
 
@@ -57,6 +61,37 @@ class AuthServiceTest {
 
         assertThrows(InvalidCredentialsException::class.java) {
             authService.login(wrongPasswordRequest)
+        }
+    }
+
+    @Test
+    fun `signUp은 이메일을 정리한 뒤 저장하고 중복이면 예외를 던진다`() {
+        val request = TestFixtureFactory.signUpRequest(email = "  Tester@Example.com  ")
+        `when`(userRepository.existsByEmail("tester@example.com")).thenReturn(false)
+
+        authService.signUp(request)
+
+        val userCaptor = ArgumentCaptor.forClass(com.andi.rest_crud.domain.User::class.java)
+        verify(userRepository).save(userCaptor.capture())
+        assertEquals("tester@example.com", userCaptor.value.email)
+    }
+
+    @Test
+    fun `signUp은 중복 이메일이면 저장하지 않고 실패한다`() {
+        val request = TestFixtureFactory.signUpRequest(email = "tester@example.com")
+        `when`(userRepository.existsByEmail("tester@example.com")).thenReturn(true)
+
+        assertThrows(UserAlreadyExistsException::class.java) {
+            authService.signUp(request)
+        }
+    }
+
+    @Test
+    fun `getCurrentUser는 없는 이메일이면 사용자 없음 예외를 던진다`() {
+        `when`(userRepository.findByEmail("missing@example.com")).thenReturn(Optional.empty())
+
+        assertThrows(UserNotFoundException::class.java) {
+            authService.getCurrentUser("missing@example.com")
         }
     }
 }

@@ -4,6 +4,8 @@ import com.andi.rest_crud.domain.PostEntity
 import com.andi.rest_crud.domain.User
 import com.andi.rest_crud.dto.LoginRequest
 import com.andi.rest_crud.dto.PostCreateRequest
+import com.andi.rest_crud.dto.PostUpdateRequest
+import com.andi.rest_crud.dto.UserSignUpRequest
 
 object TestFixtureFactory {
 
@@ -35,6 +37,24 @@ object TestFixtureFactory {
     ): LoginRequest = LoginRequest(
         email = email,
         password = password
+    )
+
+    fun signUpRequest(
+        email: String = "tester@example.com",
+        password: String = "password123"
+    ): UserSignUpRequest = UserSignUpRequest(
+        email = email,
+        password = password
+    )
+
+    fun postUpdateRequest(
+        title: String = "수정 제목",
+        content: String = "수정 내용",
+        author: String = "editor"
+    ): PostUpdateRequest = PostUpdateRequest(
+        title = title,
+        content = content,
+        author = author
     )
 
     fun user(

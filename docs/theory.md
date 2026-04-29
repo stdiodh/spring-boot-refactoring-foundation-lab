@@ -1,180 +1,188 @@
-# 자동화와 운영 흐름
+# 리팩토링과 기초 보강
 
-> build, test, deploy, verify를 왜 따로 보고 왜 자동으로 이어야 하는지 흐름으로 이해하는 문서입니다.
+> 좋은 구조가 왜 읽기 쉽고, Validation, Exception Handling, 테스트, 문서화가 왜 한 흐름으로 묶여야 하는지 이해하는 문서입니다.
 
 > 이번 시퀀스 한 줄 요약  
-> 이번 실습은 수동으로 하던 배포 단계를 workflow와 스크립트로 고정해서, 사람이 바뀌어도 같은 순서로 실행되게 만드는 과정입니다.
+> 이번 실습은 새 기술을 더하는 대신, 지금까지 만든 코드를 다시 읽고 구조를 다듬어서 “나중에 다시 봐도 설명 가능한 상태”로 만드는 과정입니다.
 
 ## 먼저 이것만 기억해도 됩니다
 
-- 자동화의 핵심은 속도보다 일관성입니다.
-- CI는 보통 build와 test를 먼저 묶고, CD는 그 결과를 배포까지 이어줍니다.
-- 배포 후 확인 단계도 자동화의 일부여야 합니다.
+- 리팩토링은 기능을 바꾸는 일이 아니라 구조를 더 읽기 좋게 만드는 일입니다.
+- Validation, Exception Handling, 테스트는 따로 노는 주제가 아니라 서로를 지지하는 장치입니다.
+- 좋은 README와 문서는 코드를 더 빨리 다시 떠올리게 해주는 복습 도구입니다.
 
 ## 이 주제를 왜 배우는가
 
-수동 배포는 처음 한두 번은 가능해도, 사람이 반복할수록 순서가 달라지고 작은 실수가 섞이기 쉽습니다.  
-어느 날은 테스트를 빼먹고, 어느 날은 로그 확인을 생략하고, 어느 날은 오래된 파일을 서버에 남겨둘 수도 있습니다.
+기능을 하나씩 붙일 때는 “동작한다”는 사실이 먼저 중요합니다.  
+하지만 기능이 늘어나고 인증, 예외 처리, 테스트, 배포까지 들어오면 그다음부터는 “다시 읽을 수 있는가”가 훨씬 중요해집니다.
 
-그래서 이번 실습에서는 사람이 기억에 의존하던 순서를 workflow와 스크립트로 고정합니다.  
-이 흐름을 이해하면 다음에는 리팩토링이나 운영 개선을 할 때도 “무엇이 반복되고 무엇이 자주 흔들리는지”를 더 잘 볼 수 있습니다.
+그래서 이번 실습에서는 지금까지 만든 기능을 멈춰 세우고, 다시 한 번 구조를 봅니다.  
+이 흐름을 이해하면 다음에는 이벤트 기반 구조처럼 새로운 사고방식을 배울 때도, 기존 구조와 무엇이 다른지 더 분명하게 볼 수 있습니다.
 
 ## 이번 실습 흐름을 먼저 한눈에 보기
 
-1. GitHub Actions `CI`가 코드 변경을 감지합니다.
-2. `build`와 `test`가 먼저 실행됩니다.
-3. `deploy` job이 release bundle을 EC2로 전달합니다.
-4. 원격 `deploy.sh`가 컨테이너를 다시 띄웁니다.
-5. `check-deploy.sh`가 컨테이너 상태, 로그, HTTP 응답을 확인합니다.
+1. `AuthService`와 `PostService`를 다시 읽습니다.
+2. 한 메서드에 여러 책임이 섞인 지점을 찾습니다.
+3. 서비스 레벨 검증과 예외 응답을 보강합니다.
+4. 테스트를 추가해서 리팩토링 전후가 같은 기능을 유지하는지 확인합니다.
+5. README와 문서를 보강해서 다시 설명하기 쉬운 상태로 만듭니다.
 
 짧게 말하면 이번 실습은  
-**변경 감지 → build → test → deploy → verify** 흐름을 익히는 과정입니다.
+**코드 다시 읽기 → 책임 분리 → 검증/예외 보강 → 테스트 보강 → 문서 보강** 흐름을 익히는 과정입니다.
 
 > 한 줄로 다시 보기  
-> 사람이 외우던 배포 순서를 파일과 workflow가 대신 기억하게 만드는 실습입니다.
+> 지금까지 만든 코드를 “잘 돌아가는 상태”에서 “잘 읽히는 상태”로 옮기는 실습입니다.
 
 ## 오늘 꼭 잡아야 할 질문
 
-- 왜 deploy 전에 build와 test가 먼저 와야 하나요?
-- CI와 CD를 아주 단순하게 어떻게 구분할 수 있나요?
-- workflow와 shell script를 나누는 이유는 무엇인가요?
-- verify 단계가 없으면 어떤 문제가 생길 수 있나요?
+- 왜 메서드가 짧아지는 것보다 책임이 분리되는 것이 더 중요할까요?
+- Controller에서 이미 검증했는데 Service에서도 왜 한 번 더 방어할 수 있을까요?
+- 테스트는 리팩토링에서 왜 더 중요해질까요?
+- README 보강이 왜 코드 품질과 연결될까요?
 
 ## 중요한 코드 먼저 보기
 
-### 1. CI 흐름의 시작
+### 1. 역할을 분리한 `AuthService`
 
-```yaml
-on:
-  pull_request:
-    branches:
-      - 10-implementation
-      - 10-answer
-
-jobs:
-  build_and_test:
-    runs-on: ubuntu-latest
+```kotlin
+fun login(request: LoginRequest): TokenResponse {
+    val email = normalizeEmail(request.email)
+    val user = findUserByEmailOrThrowInvalidCredentials(email)
+    verifyPassword(request.password, user.password)
+    return createTokenResponse(user.email)
+}
 ```
 
-- 이 설정은 코드 변경이 들어왔을 때 가장 먼저 build/test를 확인하게 만듭니다.
-- 학생이 기억해야 할 핵심은 **“배포 전에 검증이 먼저 온다”**입니다.
-- 파일: `.github/workflows/ci.yml`
+- 이 메서드는 입력 정리, 조회, 비밀번호 검증, 토큰 발급을 한눈에 따라가게 해줍니다.
+- 학생이 기억해야 할 핵심은 **“모든 일을 한 메서드 안에 다 적지 않아도 흐름은 더 선명해질 수 있다”**는 점입니다.
+- 파일: `src/main/kotlin/com/andi/rest_crud/service/AuthService.kt`
 
-### 2. 배포 명령을 스크립트로 분리한 코드
+### 2. 서비스 레벨 검증을 가진 `PostService`
 
-```bash
-docker compose --env-file .env -f deploy/compose.prod.yaml down || true
-docker build -t "${APP_IMAGE}" .
-docker compose --env-file .env -f deploy/compose.prod.yaml up -d
+```kotlin
+private fun validatePostFields(title: String, content: String, author: String): PostCommand {
+    val normalizedTitle = title.trim()
+    val errors = linkedMapOf<String, String>()
+
+    if (normalizedTitle.isBlank()) {
+        errors["title"] = "title은 비어 있을 수 없습니다."
+    }
+
+    if (errors.isNotEmpty()) {
+        throw InvalidPostRequestException(errors)
+    }
 ```
 
-- 이 코드는 EC2에서 실제 배포를 맡는 핵심 순서를 보여줍니다.
-- 학생이 기억해야 할 핵심은 **“workflow는 흐름을 묶고, 스크립트는 실제 작업을 담당한다”**는 점입니다.
-- 파일: `scripts/deploy.sh`
+- DTO 검증이 있어도, Service는 핵심 비즈니스 흐름을 한 번 더 방어할 수 있습니다.
+- 학생이 기억해야 할 핵심은 **“입력 검증은 컨트롤러에서 끝나는 것이 아니라, 중요한 흐름에서는 서비스에서도 다시 확인할 수 있다”**는 점입니다.
+- 파일: `src/main/kotlin/com/andi/rest_crud/service/PostService.kt`
 
-### 3. 배포 후 확인 코드
+### 3. 더 일관된 예외 응답
 
-```bash
-docker compose --env-file .env -f deploy/compose.prod.yaml ps
-docker logs --tail 50 aandi-app
-curl --fail --silent http://localhost:8080/ >/dev/null
+```kotlin
+private fun error(
+    code: String,
+    message: String,
+    errors: Map<String, String> = emptyMap()
+): ErrorResponse {
+    return ErrorResponse(
+        code = code,
+        message = message,
+        errors = errors
+    )
+}
 ```
 
-- 자동화는 배포만 하고 끝나지 않습니다.
-- 학생이 기억해야 할 핵심은 **“verify가 있어야 자동화가 한 단계 더 완성된다”**입니다.
-- 파일: `scripts/check-deploy.sh`
+- 예외 처리 코드는 보통 조금씩 중복되기 쉽습니다.
+- 학생이 기억해야 할 핵심은 **“예외 응답 구조도 일관되게 읽히게 정리할 수 있다”**는 점입니다.
+- 파일: `src/main/kotlin/com/andi/rest_crud/exception/GlobalExceptionHandler.kt`
 
 ## 핵심 용어를 쉬운 말로 정리하기
 
-### CI
+### 리팩토링
 
 - **뜻**  
-  코드를 합치기 전에 build와 test를 반복해서 확인하는 흐름입니다.
+  기능은 바꾸지 않고 코드를 더 읽기 좋게 정리하는 작업입니다.
 - **왜 중요한가**  
-  배포 전에 이미 깨진 코드를 먼저 걸러낼 수 있습니다.
+  기능이 늘어날수록 코드를 다시 읽고 고치는 시간이 더 많아지기 때문입니다.
 - **이번 코드에서는 어디에 보이는가**  
-  `.github/workflows/ci.yml`에서 볼 수 있습니다.
+  `AuthService`, `PostService`, `GlobalExceptionHandler`에서 볼 수 있습니다.
 - **짧은 상황 예시**  
-  PR을 올렸는데 테스트가 실패하면, 배포까지 가기 전에 바로 문제를 볼 수 있습니다.
+  로그인 로직이 길어질수록 디버깅이 어려워지는데, 입력 정리와 검증을 나누면 다시 보기 쉬워집니다.
 
-### CD
+### 서비스 레벨 검증
 
 - **뜻**  
-  검증된 결과를 실제 실행 환경으로 전달하는 흐름입니다.
+  컨트롤러 밖에서도 핵심 비즈니스 규칙을 한 번 더 확인하는 방식입니다.
 - **왜 중요한가**  
-  사람 손으로 배포 순서를 매번 반복하지 않아도 됩니다.
+  테스트나 다른 내부 호출이 DTO 검증을 우회할 수 있기 때문입니다.
 - **이번 코드에서는 어디에 보이는가**  
-  `.github/workflows/deploy.yml`과 `scripts/deploy.sh`에서 볼 수 있습니다.
+  `PostService.validatePostFields(...)`에서 볼 수 있습니다.
 - **짧은 상황 예시**  
-  테스트를 통과한 뒤 같은 방식으로 EC2에 배포가 다시 실행됩니다.
+  제목이 공백뿐인 요청이 테스트에서 직접 서비스로 들어오더라도, 서비스가 이를 막을 수 있습니다.
 
-### verify
+### 리팩토링 안정성
 
 - **뜻**  
-  배포 직후 실제로 살아났는지 확인하는 단계입니다.
+  구조를 바꿔도 기능이 깨지지 않았음을 테스트로 확인하는 감각입니다.
 - **왜 중요한가**  
-  “배포 명령이 끝났다”와 “앱이 정상이다”는 다른 이야기이기 때문입니다.
+  리팩토링은 눈에 보이는 변화가 많아서, 테스트가 없으면 실수도 놓치기 쉽습니다.
 - **이번 코드에서는 어디에 보이는가**  
-  `scripts/check-deploy.sh`에서 볼 수 있습니다.
+  `PostServiceTest`, `AuthServiceTest`의 추가 케이스에서 볼 수 있습니다.
 - **짧은 상황 예시**  
-  컨테이너는 떴지만 앱이 DB 연결 실패로 죽었을 수도 있으므로 로그와 HTTP 응답을 함께 봅니다.
+  이메일 정규화나 게시글 공백 검증을 넣어도 기존 로그인/저장 흐름이 계속 통과해야 합니다.
 
 ## 핵심 개념 설명
 
-### 1. 자동화는 순서를 고정하는 일입니다
+### 1. 읽기 쉬운 구조는 “무슨 일이 일어나는지”를 빨리 보여줍니다
 
-이번 실습에서 중요한 것은 화려한 기능이 아니라, 사람이 하던 순서를 workflow가 대신 반복하게 만드는 것입니다.  
-그래서 build, test, deploy, verify 순서를 분명히 보여주는 것이 중요합니다.
+좋은 구조는 항상 더 짧은 코드만을 뜻하지 않습니다.  
+중요한 것은 코드를 처음 봤을 때 “입력 정리 → 조회 → 검증 → 저장/응답” 같은 흐름이 더 빨리 보이는가입니다.
 
-### 2. workflow와 script는 역할이 다릅니다
+### 2. 검증, 예외, 테스트는 따로 떨어진 주제가 아닙니다
 
-workflow는 “언제, 어떤 순서로” 실행할지를 담당합니다.  
-script는 “서버에서 실제로 무엇을 할지”를 담당합니다.
+입력을 막는 검증이 있고, 실패했을 때는 예외 응답이 필요하고, 그 흐름이 계속 유지되는지는 테스트가 확인합니다.  
+그래서 이번 시퀀스에서는 세 가지를 하나의 묶음처럼 다시 봅니다.
 
-이 둘을 나누면 문서도 읽기 쉬워지고, 나중에 서버 동작만 수정할 때도 workflow 전체를 다시 뜯어보지 않아도 됩니다.
+### 3. 문서화도 코드 품질의 일부입니다
 
-### 3. verify가 있어야 운영 감각이 붙습니다
-
-많은 입문자가 배포 명령이 끝나면 성공이라고 생각합니다.  
-하지만 운영에서는 마지막 확인이 빠지면 실패를 늦게 발견하게 됩니다.
-
-그래서 이번 실습은 `docker compose ps`, `docker logs`, HTTP 응답 확인까지 자동화 흐름에 넣습니다.
+README와 문서는 단순 소개문이 아닙니다.  
+학생이 나중에 돌아왔을 때 “이 시퀀스에서 뭘 정리했지?”를 빨리 떠올리게 만들어주는 복습 도구입니다.
 
 ## 이번 실습에서 꼭 보면 좋은 포인트
 
-- `ci.yml`이 어떤 브랜치에서 돌아가는지
-- `deploy.yml`이 artifact와 remote script를 어떻게 연결하는지
-- `deploy.sh`가 어떤 순서로 컨테이너를 다시 띄우는지
-- `check-deploy.sh`가 왜 세 가지 확인을 같이 하는지
+- `AuthService.login(...)`이 왜 더 읽기 쉬워졌는지
+- `PostService.create(...)`가 왜 검증과 생성 책임을 나눴는지
+- `GlobalExceptionHandler`가 왜 공통 응답 생성 함수를 가지는지
+- 테스트가 어떤 리팩토링 포인트를 붙잡아주는지
 
 ## 자주 헷갈리는 포인트
 
-- CI와 CD를 완전히 다른 도구로 생각할 필요는 없습니다. 이번 실습에서는 둘 다 GitHub Actions 안에서 보여줘도 충분합니다.
-- build가 끝났다고 배포 가능한 것은 아닙니다. test와 verify까지 이어져야 흐름이 완성됩니다.
-- workflow에 모든 명령을 다 적기보다, 실제 서버 작업은 script로 빼는 편이 더 읽기 쉽습니다.
-- verify는 선택사항이 아니라 자동화 품질을 높이는 핵심 단계입니다.
+- 리팩토링은 “전부 다시 쓰기”가 아닙니다.
+- DTO 검증이 있다고 해서 서비스 검증이 무조건 불필요한 것은 아닙니다.
+- 테스트 추가는 리팩토링의 뒷정리가 아니라, 리팩토링을 가능하게 하는 안전장치입니다.
+- README 보강은 문서 작업이 아니라 학습 흐름 정리의 일부입니다.
 
 ## 직접 말해보기
 
-- 수동 배포보다 자동 배포가 더 좋은 이유는 무엇인가요?
-- CI와 CD를 아주 간단하게 나누면 어떻게 설명할 수 있나요?
-- 왜 deploy 명령을 script로 분리했나요?
-- 배포 후 `curl` 확인까지 넣는 이유는 무엇인가요?
+- `AuthService`에서 어떤 책임이 분리되었나요?
+- `PostService`가 왜 공백 문자열을 한 번 더 막나요?
+- 예외 응답 구조를 통일하면 어떤 점이 좋아지나요?
+- 테스트를 추가하지 않고 리팩토링하면 어떤 위험이 있나요?
 
 ## 복습 체크리스트
 
-- [ ] build, test, deploy, verify 순서를 말할 수 있습니다.
-- [ ] CI와 CD를 이번 코드 기준으로 설명할 수 있습니다.
-- [ ] workflow와 shell script의 역할 차이를 설명할 수 있습니다.
-- [ ] verify 단계가 왜 필요한지 말할 수 있습니다.
+- [ ] 리팩토링이 왜 필요한지 설명할 수 있습니다.
+- [ ] Validation, Exception Handling, 테스트가 연결된다는 점을 말할 수 있습니다.
+- [ ] `AuthService`와 `PostService`의 개선 포인트를 각각 설명할 수 있습니다.
+- [ ] README 보강이 왜 복습 도구가 되는지 말할 수 있습니다.
 
 ## 오늘 실습에서 꼭 기억할 것
 
-- 자동화는 속도를 자랑하는 것이 아니라 반복 실수를 줄이는 장치입니다.
-- build/test가 먼저 와야 deploy가 더 믿을 수 있습니다.
-- deploy 뒤 verify까지 있어야 운영 자동화 흐름이 더 완성됩니다.
+- 구조 개선은 새 기술 추가와 다른 종류의 실력입니다.
+- 읽기 쉬운 코드일수록 다시 고치기 쉽습니다.
+- 검증, 예외, 테스트, 문서는 같이 움직일 때 더 큰 힘을 냅니다.
 
 ## 다음 실습과 연결하기
 
-이번 시퀀스에서는 반복 가능한 자동화 흐름을 만들었습니다.  
-다음에는 이 흐름을 바탕으로 구조를 더 다듬고, 리팩토링과 기초 보강 관점에서 다시 돌아보는 작업으로 연결할 수 있습니다.
+이번 시퀀스에서 구조를 다시 정리했기 때문에, 다음에는 이벤트 기반 흐름처럼 다른 사고방식을 배울 때도 기존 구조와 비교하며 이해하기 쉬워집니다.

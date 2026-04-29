@@ -6,6 +6,7 @@ import com.andi.rest_crud.dto.LoginRequest
 import com.andi.rest_crud.dto.TokenResponse
 import com.andi.rest_crud.dto.UserSignUpRequest
 import com.andi.rest_crud.exception.InvalidCredentialsException
+import com.andi.rest_crud.exception.UserNotFoundException
 import com.andi.rest_crud.exception.UserAlreadyExistsException
 import com.andi.rest_crud.repository.UserRepository
 import com.andi.rest_crud.security.JwtTokenProvider
@@ -20,41 +21,55 @@ class AuthService(
 ) {
 
     fun signUp(request: UserSignUpRequest) {
-        val email = requireNotNull(request.email)
-        val rawPassword = requireNotNull(request.password)
-        val encodedPassword = requireNotNull(passwordEncoder.encode(rawPassword))
-
-        if (userRepository.existsByEmail(email)) {
-            throw UserAlreadyExistsException(email)
-        }
-
-        userRepository.save(
-            User(
-                email = email,
-                password = encodedPassword
-            )
-        )
+        val email = normalizeEmail(request.email)
+        ensureEmailAvailable(email)
+        userRepository.save(createLocalUser(email, request.password))
     }
 
     fun login(request: LoginRequest): TokenResponse {
-        val email = requireNotNull(request.email)
-        val rawPassword = requireNotNull(request.password)
-        val user = userRepository.findByEmail(email)
-            .orElseThrow { InvalidCredentialsException() }
-
-        if (!passwordEncoder.matches(rawPassword, requireNotNull(user.password))) {
-            throw InvalidCredentialsException()
-        }
-
-        return TokenResponse(
-            accessToken = jwtTokenProvider.createToken(requireNotNull(user.email))
-        )
+        val email = normalizeEmail(request.email)
+        val user = findUserByEmailOrThrowInvalidCredentials(email)
+        verifyPassword(request.password, user.password)
+        return createTokenResponse(user.email)
     }
 
     fun getCurrentUser(email: String): CurrentUserResponse {
-        val user = userRepository.findByEmail(email)
-            .orElseThrow { InvalidCredentialsException() }
+        val normalizedEmail = normalizeEmail(email)
+        val user = userRepository.findByEmail(normalizedEmail)
+            .orElseThrow { UserNotFoundException(normalizedEmail) }
 
-        return CurrentUserResponse(email = requireNotNull(user.email))
+        return CurrentUserResponse(email = user.email)
+    }
+
+    private fun normalizeEmail(email: String): String = email.trim().lowercase()
+
+    private fun ensureEmailAvailable(email: String) {
+        if (userRepository.existsByEmail(email)) {
+            throw UserAlreadyExistsException(email)
+        }
+    }
+
+    private fun createLocalUser(email: String, rawPassword: String): User {
+        return User(
+            email = email,
+            password = requireNotNull(passwordEncoder.encode(rawPassword))
+        )
+    }
+
+    private fun findUserByEmailOrThrowInvalidCredentials(email: String): User {
+        return userRepository.findByEmail(email)
+            .orElseThrow { InvalidCredentialsException() }
+    }
+
+    private fun verifyPassword(rawPassword: String, encodedPassword: String) {
+        if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
+            throw InvalidCredentialsException()
+        }
+    }
+
+    private fun createTokenResponse(email: String): TokenResponse {
+        return TokenResponse(
+            accessToken = jwtTokenProvider.createToken(email)
+        )
     }
 }

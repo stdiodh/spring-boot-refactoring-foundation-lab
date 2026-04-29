@@ -1,109 +1,103 @@
-# 자동화와 운영 흐름 구현 가이드
+# 리팩토링과 기초 보강 구현 가이드
 
 ## 이 도메인이 필요한 이유
 
-09에서는 배포를 한 번 성공시키는 경험이 중요했습니다.  
-10에서는 그 배포를 같은 순서로 반복하게 만드는 자동화가 핵심입니다.
+지금까지는 기능을 하나씩 붙이는 과정이 중요했습니다.  
+이번에는 그 기능들을 다시 읽고, 더 읽기 쉽고 점검하기 쉬운 상태로 정리하는 과정이 중요합니다.
 
 ## 학생이 완성할 최종 흐름
 
-1. `ci.yml`이 build와 test를 자동으로 실행합니다.
-2. `deploy.yml`이 artifact와 배포 단계를 연결합니다.
-3. `deploy.sh`가 EC2에서 새 버전을 다시 띄웁니다.
-4. `check-deploy.sh`가 배포 직후 상태를 자동으로 확인합니다.
+1. `AuthService`와 `PostService`에서 책임이 섞인 부분을 다시 읽습니다.
+2. 서비스 레벨 검증과 예외 응답을 보강합니다.
+3. 테스트를 추가해서 리팩토링 안정성을 확인합니다.
+4. README와 문서를 보강해 다시 설명하기 쉬운 상태를 만듭니다.
 
 ## 학생이 직접 구현할 순서
 
-1. workflow 파일 구조를 읽습니다.
-2. build step을 채웁니다.
-3. test step을 채웁니다.
-4. deploy step을 연결합니다.
-5. verify 단계까지 점검합니다.
+1. 개선 대상 Service를 하나 고릅니다.
+2. 역할이 섞인 부분을 찾습니다.
+3. Validation 또는 Exception Handling을 보강합니다.
+4. 테스트를 추가합니다.
+5. README 또는 문서를 보강합니다.
 
 ## TODO를 넣을 파일
 
-- `.github/workflows/ci.yml`
-- `.github/workflows/deploy.yml`
-- `scripts/deploy.sh`
-- `scripts/check-deploy.sh`
+- `src/main/kotlin/com/andi/rest_crud/service/PostService.kt`
+- `src/main/kotlin/com/andi/rest_crud/service/AuthService.kt`
+- `src/main/kotlin/com/andi/rest_crud/exception/GlobalExceptionHandler.kt`
+- `src/test/kotlin/com/andi/rest_crud/service/PostServiceTest.kt`
+- `src/test/kotlin/com/andi/rest_crud/service/AuthServiceTest.kt`
+- `README.md`
 
 ## 각 파일의 역할
 
-- `ci.yml`: PR이나 push에서 build/test를 자동으로 확인하는 파일
-- `deploy.yml`: artifact 업로드, EC2 전달, 원격 배포, verify를 묶는 파일
-- `deploy.sh`: 서버에서 실제 배포 순서를 실행하는 스크립트
-- `check-deploy.sh`: 배포 직후 컨테이너 상태와 앱 응답을 확인하는 스크립트
+- `PostService.kt`: 게시글 저장/수정 흐름과 서비스 레벨 검증을 다루는 핵심 파일
+- `AuthService.kt`: 이메일 정리, 사용자 조회, 비밀번호 검증, 토큰 발급 흐름을 모으는 핵심 파일
+- `GlobalExceptionHandler.kt`: 실패 응답을 일관되게 보여주는 파일
+- `*Test.kt`: 리팩토링 전후 기능이 유지되는지 확인하는 안전장치
+- `README.md`: 이번 시퀀스에서 무엇을 정리했는지 다시 떠올리게 해주는 문서
 
 ## 미리 제공할 것
 
-- 09 시퀀스에서 만든 배포 가능한 앱
-- Dockerfile, prod profile, compose 파일
-- GitHub Secrets 이름 규칙
-- 기본 workflow 파일 틀
-- 배포 대상 경로와 앱 이미지 이름
+- 10 시퀀스 answer 기반 프로젝트
+- 현재 서비스 코드
+- 기본 테스트 구조
+- 문서 기본 틀
 
 ## 단계별 구현 안내
 
-### 1. workflow 구조를 먼저 읽습니다
+### 1. 리팩토링 대상을 고릅니다
 
-- 어떤 이벤트에서 시작되는지 봅니다.
-- build/test와 deploy/verify가 같은 파일인지, 나뉘었는지 봅니다.
-- 이번 실습에서는 복잡한 기능보다 순서가 눈에 잘 보이는지가 더 중요합니다.
+- 이번 실습에서는 `AuthService`, `PostService` 두 축을 봅니다.
+- 먼저 어떤 메서드가 “읽기 어렵다”는 느낌을 주는지 찾습니다.
+- 입력 정리, 조회, 검증, 저장, 응답 변환이 한 메서드에 섞여 있는지 확인합니다.
 
-### 2. build step을 채웁니다
+### 2. 역할이 섞인 부분을 나눕니다
 
-- `./gradlew bootJar`까지 연결합니다.
-- release bundle에 어떤 파일이 들어가야 하는지 확인합니다.
-- 배포 전에 실행 가능한 산출물이 준비되어야 합니다.
+- `AuthService`에서는 이메일 정리, 조회, 비밀번호 검증, 토큰 발급을 나눕니다.
+- `PostService`에서는 게시글 필드 검증, 엔티티 생성/수정, 응답 변환을 나눕니다.
+- 핵심은 코드를 더 짧게 만드는 것이 아니라, 흐름이 더 빨리 읽히게 만드는 것입니다.
 
-### 3. test step을 채웁니다
+### 3. Validation 또는 Exception Handling을 보강합니다
 
-- `./gradlew test`를 넣습니다.
-- build만 되고 테스트가 빠진 자동화는 신뢰하기 어렵다는 점을 같이 기억합니다.
+- DTO 검증만 믿지 않고, 중요한 비즈니스 흐름은 서비스에서 한 번 더 방어합니다.
+- 이번 실습에서는 `InvalidPostRequestException` 같은 예외를 추가해 서비스 레벨 검증을 보여줍니다.
+- `GlobalExceptionHandler`도 일관된 응답 구조로 다시 정리합니다.
 
-### 4. deploy step을 연결합니다
+### 4. 테스트를 추가합니다
 
-- SSH key는 GitHub Secrets에서 복원합니다.
-- artifact를 EC2로 올립니다.
-- 서버에서는 workflow 안에 긴 명령을 직접 적기보다 `deploy.sh`로 분리합니다.
+- `PostService`에는 서비스 레벨 검증과 update 흐름 확인 테스트를 추가합니다.
+- `AuthService`에는 이메일 정규화, 중복 가입, 현재 사용자 조회 실패 같은 케이스를 추가합니다.
+- 리팩토링은 테스트가 있어야 안심하고 진행할 수 있다는 점을 같이 체감하는 것이 중요합니다.
 
-### 5. verify 단계를 넣습니다
+### 5. README와 문서를 보강합니다
 
-- `docker compose ps`
-- `docker logs`
-- `curl` 같은 HTTP 응답 확인
-
-이 세 가지를 통해 “명령은 끝났지만 앱은 죽어 있는” 상황을 더 빨리 찾을 수 있습니다.
+- 이번 시퀀스에서 무엇을 정리했는지 다시 읽기 쉽게 정리합니다.
+- 전/후 비교 포인트가 보이게 적습니다.
+- 학생이 나중에 돌아왔을 때 “아, 이때 구조를 정리했지”가 바로 떠오르게 만드는 것이 목표입니다.
 
 ## 실행 확인 방법
 
-### 로컬
-
 ```bash
-./gradlew test bootJar
-bash scripts/check-deploy.sh
+./gradlew test
+./gradlew bootRun
 ```
-
-### GitHub Actions
-
-1. `CI` workflow가 build/test를 통과하는지 확인합니다.
-2. `Deploy to EC2` workflow가 artifact, deploy, verify를 끝내는지 확인합니다.
 
 ## 학생 체크 질문
 
-- build와 test 중 어떤 것이 먼저 와야 할까요?
-- deploy를 workflow 안에 다 적지 않고 script로 뺀 이유는 무엇인가요?
-- verify가 없다면 어떤 문제를 늦게 발견할 수 있나요?
-- CI와 CD를 이번 실습 기준으로 어떻게 설명할 수 있나요?
+- `AuthService`에서 가장 먼저 분리한 책임은 무엇인가요?
+- `PostService`가 왜 공백 문자열을 서비스에서 다시 확인하나요?
+- `GlobalExceptionHandler`를 조금 더 정리하면 어떤 점이 좋아지나요?
+- 테스트가 리팩토링에서 어떤 역할을 하나요?
 
 ## 강사 / PPT 체크 질문
 
-- build → test → deploy → verify 흐름 그림이 있는가
-- 수동 배포와 자동 배포 차이를 예시로 설명할 수 있는가
-- workflow와 script 역할 차이를 시연할 수 있는가
-- verify 단계가 포함된 자동화와 빠진 자동화의 차이를 설명할 수 있는가
+- 리팩토링 전/후 구조 비교 그림이 있는가
+- `AuthService`와 `PostService`의 리팩토링 포인트가 각각 보이는가
+- 서비스 레벨 검증이 왜 필요한지 예시로 설명할 수 있는가
+- 테스트가 왜 리팩토링 안전장치인지 시연할 수 있는가
 
 ## 다음 도메인 연결 포인트
 
-이번 시퀀스는 자동화 흐름의 가장 기본 뼈대를 잡는 단계입니다.  
-다음에는 이 흐름을 바탕으로 구조를 다시 정리하고, 어떤 부분을 리팩토링해야 하는지 보는 단계로 이어질 수 있습니다.
+이번 시퀀스는 지금까지의 기초를 다시 묶는 단계입니다.  
+다음에는 이 정리된 구조 위에서 이벤트 기반 사고처럼 새로운 흐름을 비교하며 확장할 수 있습니다.

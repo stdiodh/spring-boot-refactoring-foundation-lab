@@ -1,129 +1,109 @@
-# 자동화와 운영 흐름 정답 가이드
+# 리팩토링과 기초 보강 정답 가이드
 
 ## 정답 흐름 요약
 
-정답 기준에서는 아래 파일이 핵심입니다.
+정답 기준에서는 아래 여섯 파일이 핵심입니다.
 
-- `.github/workflows/ci.yml`
-- `.github/workflows/deploy.yml`
-- `scripts/deploy.sh`
-- `scripts/check-deploy.sh`
+- `PostService.kt`
+- `AuthService.kt`
+- `GlobalExceptionHandler.kt`
+- `PostServiceTest.kt`
+- `AuthServiceTest.kt`
+- `README.md`
 
-이 네 파일이 함께 맞물려야 `build → test → deploy → verify` 흐름이 완성됩니다.
+## 1. `AuthService` 전/후 비교
 
-## 1. CI workflow 정답
+### 전
 
-```yaml
-name: CI
+- `signUp`, `login`, `getCurrentUser`가 각각 요청값 꺼내기, 조회, 검증, 토큰 발급을 한 메서드 안에서 직접 처리했습니다.
+- 기능은 맞지만 “어디서 무엇을 하는지”가 한눈에 덜 들어옵니다.
 
-on:
-  pull_request:
-    branches:
-      - 10-implementation
-      - 10-answer
-  push:
-    branches:
-      - 10-implementation
+### 후
 
-jobs:
-  build_and_test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/setup-java@v4
-      - run: ./gradlew test bootJar
+```kotlin
+fun login(request: LoginRequest): TokenResponse {
+    val email = normalizeEmail(request.email)
+    val user = findUserByEmailOrThrowInvalidCredentials(email)
+    verifyPassword(request.password, user.password)
+    return createTokenResponse(user.email)
+}
 ```
 
-핵심은 PR이나 push가 들어왔을 때 배포 전에 먼저 build/test를 돌리는 것입니다.
+- 이메일 정리
+- 사용자 조회
+- 비밀번호 검증
+- 토큰 응답 생성
 
-## 2. deploy workflow 정답 포인트
+이 흐름이 위에서 아래로 읽히게 만들었습니다.
 
-### build job
+## 2. `PostService` 전/후 비교
 
-```yaml
-jobs:
-  build:
-    runs-on: ubuntu-latest
-    steps:
-      - run: ./gradlew test bootJar
-      - uses: actions/upload-artifact@v4
+### 전
+
+- create/update 안에서 요청값 사용, 엔티티 조작, 응답 변환이 한 번에 일어났습니다.
+- DTO 검증만 믿고 서비스 레벨 검증은 없었습니다.
+
+### 후
+
+```kotlin
+fun create(request: PostCreateRequest): PostResponse {
+    val command = validateCreateRequest(request)
+    val savedPost = postRepository.save(buildPost(command))
+    return toResponse(savedPost)
+}
 ```
 
-- 배포에 필요한 release bundle을 artifact로 묶습니다.
-- deploy job은 이 artifact를 내려받아 사용합니다.
+- 검증
+- 엔티티 생성
+- 저장
+- 응답 변환
 
-### deploy job
+을 나눴습니다.  
+특히 `validatePostFields(...)`를 통해 공백 문자열을 서비스에서 한 번 더 막습니다.
 
-```yaml
-  deploy:
-    needs: build
-```
+## 3. 예외 처리 보강
 
-- build가 끝나기 전에는 deploy가 시작되지 않게 만듭니다.
-- 이 연결이 있어야 순서가 더 명확해집니다.
+이번 정답에서는 아래 예외를 추가했습니다.
 
-### verify job
+- `InvalidPostRequestException`
+- `UserNotFoundException`
 
-```yaml
-  verify:
-    needs: deploy
-```
+그리고 `GlobalExceptionHandler`에는 아래 보강을 넣었습니다.
 
-- deploy 뒤에 verify가 오도록 분리합니다.
-- 배포 확인 단계도 workflow 안에서 하나의 job으로 보이게 만드는 것이 중요합니다.
+- `error(...)` 공통 응답 생성 함수
+- `INVALID_POST_REQUEST` 응답
+- `USER_NOT_FOUND` 응답
 
-## 3. deploy.sh 정답
+즉, 리팩토링은 서비스 코드만 정리하는 것이 아니라 실패 응답 구조도 같이 정리하는 작업이라는 점을 보여줍니다.
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
+## 4. 테스트 추가 정답
 
-RELEASE_DIR="${1:-$PWD}"
-APP_IMAGE="${APP_IMAGE:-aandi-deployment-runtime-lab:latest}"
+### `PostServiceTest`
 
-cd "$RELEASE_DIR"
-docker compose --env-file .env -f deploy/compose.prod.yaml down || true
-docker build -t "$APP_IMAGE" .
-docker compose --env-file .env -f deploy/compose.prod.yaml up -d
-```
+- 제목이 공백뿐이면 `InvalidPostRequestException`
+- update 시 trim 이후 값이 저장되는지 확인
 
-핵심은 아래 순서입니다.
+### `AuthServiceTest`
 
-1. 기존 컨테이너 정리
-2. 새 이미지 빌드
-3. 새 컨테이너 기동
+- signUp 시 이메일이 정규화되어 저장되는지 확인
+- signUp 시 중복 이메일이면 `UserAlreadyExistsException`
+- 현재 사용자 조회 시 없으면 `UserNotFoundException`
 
-## 4. check-deploy.sh 정답
+## 5. README 보강 포인트
 
-```bash
-#!/usr/bin/env bash
-set -euo pipefail
+README는 단순 소개문이 아니라 아래가 빨리 보여야 합니다.
 
-RELEASE_DIR="${1:-$PWD}"
+- 이번 시퀀스의 목적
+- 어떤 파일을 손대는지
+- 어떤 흐름으로 리팩토링하는지
+- 왜 이 작업이 필요한지
 
-cd "$RELEASE_DIR"
-docker compose --env-file .env -f deploy/compose.prod.yaml ps
-docker logs --tail 50 aandi-app
-curl --fail --silent http://localhost:8080/ >/dev/null
-```
+즉, “무엇을 만들었는가”보다 “무엇을 다시 정리했는가”가 중심이어야 합니다.
 
-핵심은 아래 세 가지를 같이 확인하는 것입니다.
+## 6. 강사가 빠르게 비교할 포인트
 
-- 컨테이너 상태
-- 최근 로그
-- 실제 HTTP 응답
-
-## 5. 강사가 빠르게 비교할 포인트
-
-- `ci.yml`이 build/test를 자동으로 실행하는가
-- `deploy.yml`이 build, deploy, verify job을 분리했는가
-- `deploy.sh`가 workflow 밖으로 분리되어 있는가
-- `check-deploy.sh`가 `docker compose ps`, `docker logs`, `curl`을 모두 포함하는가
-- Secrets가 여전히 코드에 직접 적혀 있지 않은가
-
-## 6. 자주 나는 실수
-
-- test 없이 bootJar만 돌리는 경우
-- deploy job이 build job과 분리되지 않아 순서가 흐릿한 경우
-- workflow 안에 긴 SSH 명령을 전부 적어서 읽기 어려워지는 경우
-- verify 단계가 빠져서 “배포 끝”과 “정상 기동”을 구분하지 못하는 경우
+- `AuthService`가 helper 메서드로 역할을 분리했는가
+- `PostService`가 서비스 레벨 검증을 추가했는가
+- `GlobalExceptionHandler`가 새 예외와 공통 응답 생성을 가졌는가
+- 테스트가 리팩토링 포인트를 직접 확인하는가
+- README가 이번 시퀀스의 목적을 분명히 설명하는가
