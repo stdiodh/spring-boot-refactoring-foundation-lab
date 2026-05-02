@@ -1,59 +1,131 @@
 # 리팩토링과 기초 보강
 
-> 좋은 구조가 왜 읽기 쉽고, Validation, Exception Handling, 테스트, 문서화가 왜 한 흐름으로 묶여야 하는지 이해하는 문서입니다.
-
-> 이번 시퀀스 한 줄 요약  
-> 이번 실습은 새 기술을 더하는 대신, 지금까지 만든 코드를 다시 읽고 구조를 다듬어서 “나중에 다시 봐도 설명 가능한 상태”로 만드는 과정입니다.
+이번 실습은 새 기술을 더하는 대신, 지금까지 만든 코드를 다시 읽고 구조를 다듬어서 나중에 다시 봐도 설명 가능한 상태로 만드는 과정입니다.
 
 ## 먼저 이것만 기억해도 됩니다
 
 - 리팩토링은 기능을 바꾸는 일이 아니라 구조를 더 읽기 좋게 만드는 일입니다.
-- Validation, Exception Handling, 테스트는 따로 노는 주제가 아니라 서로를 지지하는 장치입니다.
-- 좋은 README와 문서는 코드를 더 빨리 다시 떠올리게 해주는 복습 도구입니다.
+- 검증, 예외 처리, 테스트는 서로 연결된 장치입니다.
+- 좋은 문서는 코드를 다시 읽는 시간을 줄여줍니다.
 
 ## 이 주제를 왜 배우는가
 
-기능이 늘어나고 인증, 예외 처리, 테스트, 배포까지 들어오면 그다음부터는 “다시 읽을 수 있는가”가 훨씬 중요해집니다.  
-이번 실습에서는 지금까지 만든 기능을 멈춰 세우고, 다시 한 번 구조를 봅니다.
+기능이 늘어나고 인증, 예외 처리, 테스트, 배포까지 들어오면 그다음부터는 새 기능 추가보다 기존 코드를 다시 읽고 바꾸는 시간이 더 많아집니다.  
+이번 실습은 바로 그 지점에서 필요한 감각을 다룹니다.
 
-## 이번 실습 흐름을 먼저 한눈에 보기
+## 기초 개념
 
-1. `AuthService`와 `PostService`를 다시 읽습니다.
-2. 한 메서드에 여러 책임이 섞인 지점을 찾습니다.
-3. 서비스 레벨 검증과 예외 응답을 보강합니다.
-4. 테스트를 추가해서 리팩토링 전후가 같은 기능을 유지하는지 확인합니다.
-5. README와 문서를 보강해서 다시 설명하기 쉬운 상태로 만듭니다.
+### 리팩토링
 
-## 중요한 코드 먼저 보기
+기능은 그대로 두고 코드를 더 이해하기 쉬운 구조로 정리하는 작업입니다.  
+정리의 기준은 예쁘게 보이는 코드가 아니라, 다음 변경이 들어왔을 때 어디를 손대야 하는지 빨리 보이는 코드입니다.
 
-### 1. `AuthService`의 긴 책임 흐름
+### 책임 분리
+
+하나의 메서드가 입력 정리, 조회, 검증, 저장, 응답 변환을 모두 들고 있으면 읽는 속도가 느려집니다.  
+책임을 나누면 코드는 조금 더 길어질 수 있지만, 흐름은 오히려 선명해집니다.
+
+### 서비스 레벨 검증
+
+컨트롤러에서 DTO 검증을 했더라도, 서비스는 핵심 비즈니스 흐름을 한 번 더 방어할 수 있습니다.  
+특히 내부 호출이나 테스트는 컨트롤러 검증을 우회할 수 있기 때문에 서비스 검증이 의미를 가집니다.
+
+### 리팩토링 안정성
+
+리팩토링은 구조를 많이 건드리기 때문에, 테스트가 없으면 기능이 깨졌는지 놓치기 쉽습니다.  
+테스트는 리팩토링 후에도 같은 동작이 유지되는지 확인하는 안전장치입니다.
+
+## 현재 코드 흐름
+
+### `AuthService`
+
+현재 정답 구조는 `login()` 안에서 아래 순서를 드러냅니다.
 
 ```kotlin
 fun login(request: LoginRequest): TokenResponse {
-    val email = requireNotNull(request.email)
-    val rawPassword = requireNotNull(request.password)
-    val user = userRepository.findByEmail(email)
-        .orElseThrow { InvalidCredentialsException() }
+    val email = normalizeEmail(request.email)
+    val user = findUserByEmailOrThrowInvalidCredentials(email)
+    verifyPassword(request.password, user.password)
+    return createTokenResponse(user.email)
+}
 ```
 
-- 이 메서드에는 입력 꺼내기, 조회, 검증, 응답 생성이 한 번에 모여 있습니다.
-- 이번 실습에서는 여기서 어떤 책임을 먼저 분리할지 판단하는 것이 핵심입니다.
+이 흐름은 입력 정리, 조회, 검증, 응답 생성이 helper 메서드로 나뉘어 있어서 어디서 무엇을 하는지 빠르게 읽을 수 있습니다.
 
-### 2. `PostService`의 저장/수정 흐름
+### `PostService`
+
+게시글 저장과 수정도 검증, 엔티티 조작, 응답 변환이 나뉘어 있습니다.
 
 ```kotlin
-fun update(id: Long, request: PostUpdateRequest): PostResponse {
-    val post = findPostById(id)
-    post.title = request.title
-    post.content = request.content
-    post.author = request.author
+fun create(request: PostCreateRequest): PostResponse {
+    val command = validateCreateRequest(request)
+    val savedPost = postRepository.save(buildPost(command))
+    return toResponse(savedPost)
+}
 ```
 
-- 지금은 DTO 검증에만 기대고 있어서, 서비스 자체의 방어 로직은 거의 없습니다.
-- 이번 실습에서는 서비스가 어떤 수준까지 스스로 검증해야 하는지도 같이 생각해보게 됩니다.
+특히 `validatePostFields(...)`는 공백 문자열을 서비스에서 다시 막습니다.
 
-## 핵심 개념 설명
+### `GlobalExceptionHandler`
 
-- 읽기 쉬운 구조는 “무슨 일이 일어나는지”를 빨리 보여줍니다.
-- 검증, 예외, 테스트는 같이 움직일 때 훨씬 강해집니다.
-- 문서 보강도 구조 개선의 일부입니다.
+실패 응답도 예외마다 조금씩 직접 만들지 않고, `error(...)`를 통해 한 번 모아서 생성합니다.
+
+## 실무 확장 개념
+
+이번 시퀀스의 실무 확장 개념은 변경에 강한 코드 기준입니다.
+
+### 문제 코드
+
+```kotlin
+fun login(request: LoginRequest): TokenResponse {
+    val email = request.email.trim().lowercase()
+    val user = userRepository.findByEmail(email)
+        .orElseThrow { InvalidCredentialsException() }
+
+    if (!passwordEncoder.matches(request.password, user.password)) {
+        throw InvalidCredentialsException()
+    }
+
+    return TokenResponse(jwtTokenProvider.createToken(user.email))
+}
+```
+
+이 코드는 동작은 하지만, 이메일 정리 규칙을 바꾸거나 예외 정책을 바꾸거나 토큰 응답을 확장하려고 할 때 수정 지점이 한 메서드에 몰립니다.
+
+### 내부에서 어떤 문제가 커지는가
+
+- 입력 정리 규칙이 바뀌면 `login()`과 `signUp()`을 같이 손봐야 할 수 있습니다.
+- 조회 실패와 비밀번호 실패가 한 메서드에 섞여 있어 디버깅 포인트가 흐려집니다.
+- 테스트도 “로그인 성공”만 보면 되고, 입력 정규화나 검증 경계를 놓치기 쉽습니다.
+
+### 정리된 코드 예시
+
+```kotlin
+private fun normalizeEmail(email: String): String = email.trim().lowercase()
+
+private fun findUserByEmailOrThrowInvalidCredentials(email: String): User {
+    return userRepository.findByEmail(email)
+        .orElseThrow { InvalidCredentialsException() }
+}
+
+private fun verifyPassword(rawPassword: String, encodedPassword: String) {
+    if (!passwordEncoder.matches(rawPassword, encodedPassword)) {
+        throw InvalidCredentialsException()
+    }
+}
+```
+
+이렇게 나누면 다음 사람이 코드를 읽을 때도 흐름을 더 빨리 따라갈 수 있고, 검증 규칙이나 예외 정책을 바꿀 때 수정 지점도 더 명확해집니다.
+
+## 이번 실습에서 꼭 보면 좋은 포인트
+
+- `AuthService`가 어떤 경계로 나뉘는지
+- `PostService`가 DTO 검증 외에 왜 서비스 검증을 두는지
+- 예외 응답 구조를 공통화하면 무엇이 단순해지는지
+- 테스트가 어떤 리팩토링 포인트를 보호하는지
+
+## 오늘 실습에서 꼭 기억할 것
+
+- 리팩토링은 코드 미화가 아니라 변경 비용을 낮추는 작업입니다.
+- 서비스 레벨 검증은 비즈니스 흐름을 지키는 마지막 방어선이 될 수 있습니다.
+- 테스트가 있어야 리팩토링을 더 자신 있게 진행할 수 있습니다.
