@@ -1,8 +1,8 @@
-# 리팩토링과 기초 보강 정답 가이드
+# 리팩토링과 기초 보강 참고 구현 가이드
 
-## 정답 흐름 요약
+## 참고 구현 흐름 요약
 
-정답 기준에서는 아래 여섯 파일이 핵심입니다.
+참고 기준에서는 아래 여섯 파일이 핵심입니다.
 
 - `PostService.kt`
 - `AuthService.kt`
@@ -34,7 +34,7 @@ fun login(request: LoginRequest): TokenResponse {
 - 비밀번호 검증
 - 토큰 응답 생성
 
-이 흐름이 위에서 아래로 읽히게 만들었습니다.  
+이 흐름이 위에서 아래로 읽히게 만들었습니다.
 핵심은 메서드 수가 늘어난 것이 아니라, 다음 변경이 들어왔을 때 손대야 할 경계가 더 분명해진 점입니다.
 
 ## 2. `PostService` 전/후 비교
@@ -59,12 +59,12 @@ fun create(request: PostCreateRequest): PostResponse {
 - 저장
 - 응답 변환
 
-을 나눴습니다.  
+을 나눴습니다.
 특히 `validatePostFields(...)`를 통해 공백 문자열을 서비스에서 한 번 더 막습니다.
 
 ## 3. 예외 처리 보강
 
-이번 정답에서는 아래 예외를 추가했습니다.
+이번 참고 구현에서는 아래 예외를 추가했습니다.
 
 - `InvalidPostRequestException`
 - `UserNotFoundException`
@@ -77,7 +77,7 @@ fun create(request: PostCreateRequest): PostResponse {
 
 즉, 리팩토링은 서비스 코드만 정리하는 것이 아니라 실패 응답 구조도 같이 정리하는 작업이라는 점을 보여줍니다.
 
-## 4. 테스트 추가 정답
+## 4. 테스트 추가 참고 구현
 
 ### `PostServiceTest`
 
@@ -101,7 +101,7 @@ README는 단순 소개문이 아니라 아래가 빨리 보여야 합니다.
 
 즉, 무엇을 만들었는가보다 무엇을 다시 정리했는가가 중심이어야 합니다.
 
-## 6. 강사가 빠르게 비교할 포인트
+## 6. 리뷰어가 빠르게 비교할 포인트
 
 - `AuthService`가 helper 메서드로 역할을 분리했는가
 - `PostService`가 서비스 레벨 검증을 추가했는가
