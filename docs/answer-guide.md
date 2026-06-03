@@ -1,28 +1,17 @@
-# 리팩토링과 기초 보강 참고 구현 비교 가이드
+# 리팩토링과 기초 보강 비교 안내
 
-이 브랜치는 starter이므로 참고 구현를 그대로 싣지 않습니다.
-완성된 흐름은 `11-answer` 브랜치에서 확인합니다.
+이 문서는 이전 운영에서 starter 브랜치에 두었던 비교 안내입니다.
+현재 starter 브랜치에서는 세부 비교 내용, 비교 브랜치명, 구현 해설을 싣지 않습니다.
 
-## 참고 구현 브랜치에서 꼭 비교할 파일
+## 실습 중 우선 볼 문서
 
-- `PostService.kt`
-- `AuthService.kt`
-- `GlobalExceptionHandler.kt`
-- `PostServiceTest.kt`
-- `AuthServiceTest.kt`
 - `README.md`
+- `docs/theory.md`
+- `docs/implementation.md`
+- `docs/checklist.md`
+- `docs/assets.md`
 
-## 비교할 때 볼 포인트
+## 유지 이유
 
-- `AuthService`가 helper 메서드로 책임을 분리했는가
-- `PostService`가 서비스 레벨 검증을 추가했는가
-- `GlobalExceptionHandler`가 새 예외와 공통 응답 생성을 가졌는가
-- 테스트가 리팩토링 포인트를 직접 확인하는가
-- README가 이번 시퀀스의 목적을 분명히 설명하는가
-
-특히 아래 질문으로 비교하면 흐름이 더 잘 보입니다.
-
-- `login()`을 읽었을 때 입력 정리, 조회, 검증, 토큰 발급 순서가 바로 보이는가
-- 게시글 저장/수정 흐름에서 검증과 엔티티 조작이 분리되어 있는가
-- 예외 응답 구조가 서비스 보강과 함께 움직이는가
-- 테스트가 리팩토링의 결과만이 아니라 경계 자체를 확인하는가
+- 외부에서 이 경로를 열 가능성이 있어 바로 삭제하지 않고 안내 문서로 남깁니다.
+- 다음 정리 단계에서 README와 체크리스트에 안내가 충분히 흡수되면 삭제 여부를 판단할 수 있습니다.

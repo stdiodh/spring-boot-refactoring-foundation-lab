@@ -1,112 +1,96 @@
-# 리팩토링과 기초 보강 구현 가이드
+# 구현 가이드
 
-## 이 도메인이 필요한 이유
+이번 시퀀스는 새 기능을 많이 붙이는 단계가 아니라, 지금까지 만든 기능을 다시 읽고 더 안전하게 바꾸는 단계입니다.
+starter 브랜치에서는 세부 구현보다 각 변경의 의도와 확인 기준을 먼저 봅니다.
 
-지금까지는 기능을 하나씩 붙이는 과정이 중요했습니다.
-이번에는 그 기능들을 다시 읽고, 더 읽기 쉽고 점검하기 쉬운 상태로 정리하는 과정이 중요합니다.
+## 1. 구현 전에 확인할 문제
 
-## 실습에서 완성할 최종 흐름
+서비스 메서드가 여러 책임을 한 번에 갖고 있으면 입력 규칙, 조회 실패, 검증 실패, 응답 생성이 한곳에 섞입니다.
+리팩토링은 이 흐름을 나누고 테스트로 안정성을 확인하는 과정입니다.
 
-1. `AuthService`와 `PostService`에서 책임이 섞인 부분을 다시 읽습니다.
-2. 서비스 레벨 검증과 예외 응답을 보강합니다.
-3. 테스트를 추가해서 리팩토링 안정성을 확인합니다.
-4. README와 문서를 보강해 다시 설명하기 쉬운 상태를 만듭니다.
+## 2. 구현 순서
 
-## 실습자가 직접 구현할 순서
+1. 개선 대상 Service를 읽고 책임이 섞인 부분을 찾습니다.
+2. 입력 정리, 조회, 검증, 응답 생성을 역할별로 나눕니다.
+3. 서비스 레벨 검증과 예외 응답을 보강합니다.
+4. 테스트를 추가해 기존 동작이 유지되는지 확인합니다.
+5. README와 문서에 정리 의도를 남깁니다.
 
-1. 개선 대상 Service를 하나 고릅니다.
-2. 역할이 섞인 부분을 찾습니다.
-3. Validation 또는 Exception Handling을 보강합니다.
-4. 테스트를 추가합니다.
-5. README 또는 문서를 보강합니다.
+## 3. Step 1. 리팩토링 대상 찾기
 
-## TODO를 넣을 파일
+### 해야 할 일
 
-- `src/main/kotlin/com/andi/rest_crud/service/PostService.kt`
-- `src/main/kotlin/com/andi/rest_crud/service/AuthService.kt`
-- `src/main/kotlin/com/andi/rest_crud/exception/GlobalExceptionHandler.kt`
-- `src/test/kotlin/com/andi/rest_crud/service/PostServiceTest.kt`
-- `src/test/kotlin/com/andi/rest_crud/service/AuthServiceTest.kt`
-- `README.md`
+`AuthService`와 `PostService`에서 한 메서드가 너무 많은 일을 하고 있는지 확인합니다.
 
-## 각 파일의 역할
+### 왜 이 작업을 하는가
 
-- `PostService.kt`: 게시글 저장/수정 흐름과 서비스 레벨 검증을 다루는 핵심 파일
-- `AuthService.kt`: 이메일 정리, 사용자 조회, 비밀번호 검증, 토큰 발급 흐름을 모으는 핵심 파일
-- `GlobalExceptionHandler.kt`: 실패 응답을 일관되게 보여주는 파일
-- `*Test.kt`: 리팩토링 전후 기능이 유지되는지 확인하는 안전장치
-- `README.md`: 이번 시퀀스에서 무엇을 정리했는지 다시 떠올리게 해주는 문서
+리팩토링은 무작정 쪼개는 작업이 아닙니다.
+먼저 변경이 자주 일어날 책임과 검증이 필요한 경계를 찾는 것이 중요합니다.
 
-## 미리 제공할 것
+### 확인 방법
 
-- 10 시퀀스 answer 기반 프로젝트
-- 현재 서비스 코드
-- 기본 테스트 구조
-- 문서 기본 틀
+입력 정리, 조회, 검증, 저장, 응답 변환 중 어떤 책임이 한 메서드에 섞여 있는지 표시합니다.
 
-## 단계별 구현 안내
+## 4. Step 2. 역할이 섞인 부분 나누기
 
-### 1. 리팩토링 대상을 고릅니다
+### 해야 할 일
 
-- 이번 실습에서는 `AuthService`, `PostService` 두 축을 봅니다.
-- 먼저 어떤 메서드가 “읽기 어렵다”는 느낌을 주는지 찾습니다.
-- 입력 정리, 조회, 검증, 저장, 응답 변환이 한 메서드에 섞여 있는지 확인합니다.
+로그인 흐름은 이메일 정리, 사용자 조회, 비밀번호 검증, 토큰 응답 생성을 구분합니다.
+게시글 흐름은 필드 검증, 엔티티 생성/수정, 응답 변환을 구분합니다.
 
-### 2. 역할이 섞인 부분을 나눕니다
+### 왜 이 작업을 하는가
 
-- `AuthService`에서는 이메일 정리, 조회, 비밀번호 검증, 토큰 발급을 나눕니다.
-- `PostService`에서는 게시글 필드 검증, 엔티티 생성/수정, 응답 변환을 나눕니다.
-- 핵심은 코드를 더 짧게 만드는 것이 아니라, 흐름이 더 빨리 읽히게 만드는 것입니다.
+다음 사람이 코드를 읽을 때 흐름을 빠르게 따라가게 하기 위해서입니다.
+수정 지점이 분명하면 새로운 검증 규칙이나 응답 정책을 추가하기도 쉬워집니다.
 
-예를 들면 `login()`은 최종적으로 아래처럼 읽히는 흐름을 목표로 합니다.
+### 확인 방법
 
-```kotlin
-fun login(request: LoginRequest): TokenResponse {
-    val email = normalizeEmail(request.email)
-    val user = findUserByEmailOrThrowInvalidCredentials(email)
-    verifyPassword(request.password, user.password)
-    return createTokenResponse(user.email)
-}
-```
+메서드 이름만 읽어도 그 메서드가 맡은 책임을 설명할 수 있는지 확인합니다.
 
-### 3. Validation 또는 Exception Handling을 보강합니다
+## 5. Step 3. 검증과 예외 응답 보강
 
-- DTO 검증만 믿지 않고, 중요한 비즈니스 흐름은 서비스에서 한 번 더 방어합니다.
-- 이번 실습에서는 `InvalidPostRequestException` 같은 예외를 추가해 서비스 레벨 검증을 보여줍니다.
-- `GlobalExceptionHandler`도 일관된 응답 구조로 다시 정리합니다.
+### 해야 할 일
 
-게시글 쪽은 아래처럼 공백 문자열을 서비스에서 다시 막는 방향을 목표로 합니다.
+DTO 검증만 믿지 않고 서비스에서 중요한 비즈니스 검증을 한 번 더 확인합니다.
+실패 응답은 `GlobalExceptionHandler`에서 일관되게 정리합니다.
 
-```kotlin
-private fun validatePostFields(title: String, content: String, author: String): PostCommand {
-    val normalizedTitle = title.trim()
-    val errors = linkedMapOf<String, String>()
+### 왜 이 작업을 하는가
 
-    if (normalizedTitle.isBlank()) {
-        errors["title"] = "title은 비어 있을 수 없습니다."
-    }
+서비스는 컨트롤러 밖에서도 호출될 수 있습니다.
+핵심 비즈니스 규칙은 서비스에서 방어해야 테스트와 내부 호출에서도 같은 기준을 유지할 수 있습니다.
 
-    if (errors.isNotEmpty()) {
-        throw InvalidPostRequestException(errors)
-    }
-}
-```
+### 확인 방법
 
-### 4. 테스트를 추가합니다
+빈 문자열, 잘못된 입력, 조회 실패가 의도한 예외와 응답 구조로 이어지는지 확인합니다.
 
-- `PostService`에는 서비스 레벨 검증과 update 흐름 확인 테스트를 추가합니다.
-- `AuthService`에는 이메일 정규화, 중복 가입, 현재 사용자 조회 실패 같은 케이스를 추가합니다.
-- 리팩토링은 테스트가 있어야 안심하고 진행할 수 있다는 점을 같이 체감하는 것이 중요합니다.
+## 6. Step 4. 테스트와 문서로 고정하기
 
-### 5. README와 문서를 보강합니다
+### 해야 할 일
 
-- 이번 시퀀스에서 무엇을 정리했는지 다시 읽기 쉽게 정리합니다.
-- 전/후 비교 포인트가 보이게 적습니다.
-- 실습자가 나중에 돌아왔을 때 “아, 이때 구조를 정리했지”가 바로 떠오르게 만드는 것이 목표입니다.
+Service 테스트로 리팩토링 후 동작이 유지되는지 확인합니다.
+README와 문서에는 무엇을 정리했는지 짧게 남깁니다.
 
-## 실행 확인 방법
+### 왜 이 작업을 하는가
+
+테스트는 리팩토링 안정성을 확인하고, 문서는 다음 사람이 변경 의도를 이해하게 돕습니다.
+
+### 확인 방법
 
 ```bash
 ./gradlew test
-./gradlew bootRun
 ```
+
+## 마지막 확인
+
+- `AuthService`와 `PostService`의 책임 경계를 설명합니다.
+- 서비스 레벨 검증이 필요한 이유를 설명합니다.
+- 테스트가 어떤 리팩토링 포인트를 보호하는지 설명합니다.
+
+<details>
+<summary>멘토용 진행 포인트</summary>
+
+- 힌트는 "어떤 책임이 섞여 있는가"를 찾게 하는 수준으로 제공합니다.
+- 세부 구현을 바로 제시하기보다 메서드 이름과 테스트 이름으로 책임을 유도합니다.
+- 리팩토링 후 기능이 그대로인지 테스트로 확인하게 합니다.
+
+</details>

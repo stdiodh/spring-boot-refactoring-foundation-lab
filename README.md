@@ -3,7 +3,7 @@
 이 실습은 지금까지 만든 기능을 다시 읽고, 더 설명하기 쉽고 더 바꾸기 쉬운 구조로 정리해보는 단계입니다.
 
 이 브랜치는 `11-implementation` starter입니다.
-핵심 파일에는 TODO가 들어 있고, 참고 구현 비교는 `11-answer` 브랜치에서 합니다.
+핵심 파일에는 TODO가 들어 있고, 실습 중에는 README, 이론, 구현 가이드, 체크리스트를 기준으로 진행합니다.
 
 ## 이번 시퀀스에서 다루는 것
 
@@ -17,7 +17,6 @@
 
 - [이론 문서](./docs/theory.md)
 - [구현 문서](./docs/implementation.md)
-- [참고 구현 비교 가이드](./docs/answer-guide.md)
 - [체크리스트](./docs/checklist.md)
 - [제공 자산 정리](./docs/assets.md)
 
