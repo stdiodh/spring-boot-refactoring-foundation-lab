@@ -1,28 +1,66 @@
-# 리팩토링과 기초 보강
+# 11 리팩토링과 기초 보강
 
-이 실습은 지금까지 만든 기능을 다시 읽고, 더 설명하기 쉽고 더 바꾸기 쉬운 구조로 정리해보는 단계입니다.
+이 브랜치는 `11-answer` 참고 구현 브랜치입니다.
+지금까지 만든 기능을 다시 읽고, 책임 분리, 서비스 검증, 예외 응답, 테스트, 문서화를 함께 정리합니다.
 
-## 이 레포에서 다루는 것
+## 이 시퀀스에서 다루는 문제
 
-- `AuthService`의 입력 정리, 조회, 검증, 토큰 발급 책임 분리
-- `PostService`의 서비스 레벨 검증 보강
-- `GlobalExceptionHandler`의 응답 일관성 보강
-- 테스트 보강으로 리팩토링 안정성 확인
-- README와 문서를 다시 보기 쉬운 형태로 정리
+기능이 쌓이면 새 기능 추가보다 기존 코드를 다시 읽고 바꾸는 시간이 늘어납니다.
+이번 시퀀스는 `AuthService`와 `PostService`를 중심으로 다음 변경이 들어왔을 때 수정 지점이 더 잘 보이는 구조를 확인합니다.
 
-## 문서
+## 학습 목표
 
-- [이론 문서](./docs/theory.md)
-- [구현 문서](./docs/implementation.md)
-- [참고 구현 가이드](./docs/answer-guide.md)
-- [체크리스트](./docs/checklist.md)
-- [제공 자산 정리](./docs/assets.md)
+- 리팩토링을 기능 변경이 아니라 변경 비용을 낮추는 작업으로 설명합니다.
+- Service의 입력 정리, 조회, 검증, 응답 생성 책임을 구분합니다.
+- 서비스 레벨 검증과 예외 응답 구조를 연결합니다.
+- 테스트가 리팩토링 안정성을 어떻게 보장하는지 확인합니다.
+- README와 문서가 코드를 다시 읽는 시간을 줄이는 역할을 설명합니다.
 
-## 핵심 파일
+## 멘티 시작 흐름
 
-- [`src/main/kotlin/com/andi/rest_crud/service/PostService.kt`](./src/main/kotlin/com/andi/rest_crud/service/PostService.kt)
-- [`src/main/kotlin/com/andi/rest_crud/service/AuthService.kt`](./src/main/kotlin/com/andi/rest_crud/service/AuthService.kt)
-- [`src/main/kotlin/com/andi/rest_crud/exception/GlobalExceptionHandler.kt`](./src/main/kotlin/com/andi/rest_crud/exception/GlobalExceptionHandler.kt)
-- [`src/test/kotlin/com/andi/rest_crud/service/PostServiceTest.kt`](./src/test/kotlin/com/andi/rest_crud/service/PostServiceTest.kt)
-- [`src/test/kotlin/com/andi/rest_crud/service/AuthServiceTest.kt`](./src/test/kotlin/com/andi/rest_crud/service/AuthServiceTest.kt)
-- [`README.md`](./README.md)
+starter 브랜치에서 먼저 책임이 섞인 메서드를 찾고 직접 정리합니다.
+이 브랜치는 실습 후 helper 경계, 예외 응답, 테스트 보강을 비교할 때 사용합니다.
+
+## 읽는 순서
+
+1. [이론 정리](./docs/theory.md)
+2. [구현 가이드](./docs/implementation.md)
+3. [체크리스트](./docs/checklist.md)
+4. [참고 구현 가이드](./docs/answer-guide.md)
+5. [제공 자산 정리](./docs/assets.md)
+
+## 실행 / 테스트 방법
+
+```bash
+./gradlew test
+./gradlew bootRun
+```
+
+## 완료 기준
+
+- 테스트가 통과합니다.
+- `AuthService`와 `PostService`의 책임 분리 기준을 설명합니다.
+- 서비스 검증과 예외 응답이 함께 움직이는 이유를 설명합니다.
+- 리팩토링 후에도 기능이 유지되는지 테스트로 확인합니다.
+
+<details>
+<summary>멘토용 진행 포인트</summary>
+
+## 수업 전 확인
+
+- starter 브랜치의 TODO와 answer 브랜치의 비교 파일을 먼저 확인합니다.
+- 리팩토링 목표가 새 기능 추가가 아니라 구조 개선임을 분명히 합니다.
+
+## 수업 중 질문
+
+- "이 메서드는 몇 가지 책임을 동시에 갖고 있나요?"
+- "서비스 검증은 DTO 검증과 어떤 차이가 있나요?"
+- "이 테스트는 어떤 리팩토링 위험을 막나요?"
+
+## 리뷰 기준
+
+- helper 메서드 분리가 의미 있는 책임 경계를 만드는지 확인합니다.
+- 예외 응답 구조가 서비스 보강과 함께 정리되었는지 확인합니다.
+- 테스트 이름이 보호하는 동작과 경계를 설명하는지 확인합니다.
+
+</details>
