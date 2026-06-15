@@ -1,84 +1,39 @@
 # 리팩토링 구현 가이드
 
-## 1. 구현 전에 확인할 문제
+## 1. 해결할 문제
 
-이번 시퀀스는 새 기능을 추가하는 단계가 아닙니다.
-기존 API 동작을 유지하면서 파일 위치와 책임 경계를 더 읽기 쉽게 정리하는 단계입니다.
+기존 코드는 동작하지만 파일 위치와 책임이 섞이면 수정 비용이 커집니다.
+이번 실습은 동작을 유지하면서 package 이동과 작은 책임 분리를 수행합니다.
 
-작업 전에 `./gradlew test` 결과를 먼저 확인합니다.
-이 결과가 리팩토링 후 다시 비교할 기준입니다.
+## 2. 구현 흐름
 
-## 2. 구현 순서
+1. Before 상태에서 `./gradlew test`를 실행합니다.
+2. `PostService.kt`, `AuthService.kt`, `GlobalExceptionHandler.kt`의 책임을 읽습니다.
+3. feature 단위 package 이동 후보를 정합니다.
+4. package 선언과 import를 정리합니다.
+5. After 상태에서 `./gradlew test`를 다시 실행합니다.
 
-1. 변경 전 테스트를 실행합니다.
-2. `post` 기능 파일을 feature 기반 구조로 이동합니다.
-3. `auth` 기능 파일을 feature 기반 구조로 이동합니다.
-4. 계정 복구 기능과 공통 책임을 분리합니다.
-5. import, package 선언, component scan 범위를 확인합니다.
-6. 테스트를 다시 실행합니다.
-7. 동작 보존이 확인된 뒤 작은 책임 분리를 수행합니다.
+## 3. 핵심 코드
 
-## 3. Step 1. 현재 동작을 고정합니다
-
-### 해야 할 일
+왜 이 코드를 보는지 먼저 정리합니다.
+리팩토링은 외부 동작을 바꾸지 않아야 하므로 테스트가 기준이 됩니다.
 
 ```bash
 ./gradlew test
 ```
 
-### 왜 이 작업을 하는가
+이 명령은 package 이동 뒤에도 API 동작과 Service 규칙이 유지되는지 확인하는 문제를 해결합니다.
+실패하면 마지막으로 옮긴 파일과 import 변경을 먼저 확인합니다.
 
-리팩토링은 동작을 바꾸지 않는 구조 개선입니다.
-변경 전 테스트 결과가 없으면 실패가 구조 이동 때문인지, 기존 문제인지, 새 책임 분리 때문인지 구분하기 어렵습니다.
+## 4. 확인할 파일
 
-### 확인 방법
+- `src/main/kotlin/com/andi/rest_crud/service/PostService.kt`
+- `src/main/kotlin/com/andi/rest_crud/service/AuthService.kt`
+- `src/main/kotlin/com/andi/rest_crud/exception/GlobalExceptionHandler.kt`
+- `src/test/kotlin/com/andi/rest_crud/service/PostServiceTest.kt`
+- `src/test/kotlin/com/andi/rest_crud/service/AuthServiceTest.kt`
 
-테스트 결과와 실패한 테스트가 있으면 실패 이름을 기록합니다.
+## 5. 한계와 다음 개선 방향
 
-## 4. Step 2. 기능 단위 package를 정리합니다
-
-### 해야 할 일
-
-`post`, `auth`, `account/recovery`, `common` 같은 기능 또는 공통 책임 단위로 파일을 옮깁니다.
-
-### 왜 이 작업을 하는가
-
-관련 파일을 가까이 두면 기능을 수정할 때 확인해야 할 경로가 줄어듭니다.
-다만 이동 과정에서 package 선언과 import가 함께 바뀌므로 한 번에 너무 많은 책임 변경을 섞지 않습니다.
-
-### 확인 방법
-
-컴파일이 되는지 확인하고, API 경로와 응답 모양을 임의로 바꾸지 않았는지 확인합니다.
-
-## 5. Step 3. 공통 책임을 좁게 둡니다
-
-### 해야 할 일
-
-공통 예외, validation helper, config처럼 여러 기능이 함께 쓰는 책임만 `common` 쪽으로 둡니다.
-
-### 왜 이 작업을 하는가
-
-`common`은 편한 보관함이 아니라 공유 책임을 표현하는 위치입니다.
-한 기능에서만 쓰는 파일까지 넣으면 나중에 변경 이유가 다시 섞입니다.
-
-### 확인 방법
-
-`common`에 들어간 파일마다 "둘 이상의 기능이 함께 쓰는가?"를 확인합니다.
-
-## 6. 마지막 확인
-
-```bash
-./gradlew test
-```
-
-리팩토링 후 같은 테스트가 통과해야 합니다.
-실패하면 package 이동 문제인지, 책임 분리 중 동작이 바뀐 문제인지 나누어 확인합니다.
-
-<details>
-<summary>멘토용 진행 포인트</summary>
-
-- 한 번에 큰 구조 변경을 하지 않도록 변경 단위를 끊게 합니다.
-- 테스트 실패가 발생하면 실패 위치보다 먼저 "마지막으로 바꾼 책임"을 설명하게 합니다.
-- 정답을 직접 제시하기보다 package 이동, import 정리, 테스트 재실행 순서를 되짚게 합니다.
-
-</details>
+큰 구조 변경보다 작은 단위 이동과 테스트 확인을 우선합니다.
+새 기능 추가가 필요하면 리팩토링 변경과 분리해 별도 작업으로 기록합니다.

@@ -1,62 +1,63 @@
 # 리팩토링과 기초 보강 이론
 
-## 1. 왜 이 개념이 필요한가
+## 1. 기능은 동작하는데 왜 읽기 어려울까?
 
-기능이 늘어난 코드는 동작하더라도 읽기 어려워질 수 있습니다.
-Controller, Service, Repository, Validation, Exception Handling, Test가 서로의 책임을 침범하면 작은 변경도 넓은 파일을 건드리게 됩니다.
+기능이 늘어나면 Controller, Service, Repository, Exception, Test가 서로 다른 이유로 자주 바뀝니다.
+파일 위치와 책임 경계가 흐려지면 작은 수정도 넓은 파일을 훑어야 합니다.
 
-이번 시퀀스의 목표는 새 기능을 크게 추가하는 것이 아니라, 이미 만든 기능의 동작을 유지하면서 구조를 설명 가능한 상태로 정리하는 것입니다.
+리팩토링은 새 기능을 붙이는 작업이 아니라, 기존 동작을 유지하면서 코드를 더 설명 가능한 상태로 정리하는 작업입니다.
 
-## 2. 기존 방식의 한계
+## 2. 배경: Before를 고정하지 않으면 After를 믿기 어렵습니다
 
-layer-based 구조는 처음에는 이해하기 쉽지만 기능이 늘어나면 같은 기능의 파일이 여러 패키지에 흩어집니다.
-반대로 feature-based 구조는 관련 파일을 가까이 둘 수 있지만, 무리하게 옮기면 package 선언, import, component scan, 테스트가 함께 깨질 수 있습니다.
+패키지를 옮기거나 책임을 나누면 package 선언, import, component scan, 테스트 경로가 함께 바뀝니다.
+이때 테스트 없이 구조를 바꾸면 실패가 기존 문제인지, 이동 과정의 실수인지 구분하기 어렵습니다.
 
-리팩토링은 구조를 바꾸는 작업이지만 외부 동작을 바꾸는 작업은 아닙니다.
-따라서 변경 전후에 같은 테스트가 통과해야 하고, API path, status code, response body가 임의로 달라지면 안 됩니다.
+그래서 이번 시퀀스는 리팩토링 전 `./gradlew test`를 먼저 실행하고, 이동 후 같은 테스트가 통과하는지 확인합니다.
 
-## 3. 이번 시퀀스에서 선택한 접근
+## 3. 선택한 방식
 
-이번 시퀀스는 아래 순서를 사용합니다.
+1. Before 상태에서 테스트를 실행합니다.
+2. `post`, `auth`, `account/recovery`, `common` 같은 책임 단위로 파일을 읽습니다.
+3. package 이동과 책임 분리를 한 번에 섞지 않습니다.
+4. 이동 후 import, package 선언, API path, status code, response body를 확인합니다.
+5. After 상태에서 같은 테스트를 다시 실행합니다.
 
-1. 변경 전 `./gradlew test`로 현재 동작을 고정합니다.
-2. 기능 단위로 package를 옮깁니다.
-3. import와 package 선언을 정리합니다.
-4. 테스트를 다시 실행합니다.
-5. 동작이 유지된 뒤에만 작은 책임 분리를 수행합니다.
+## 4. 핵심 코드로 연결하기
 
-이 순서는 패키지 이동과 책임 분리를 한 번에 섞지 않기 위한 안전장치입니다.
+실제 파일 경로는 아래와 같습니다.
 
-## 4. 핵심 개념
+- `src/main/kotlin/com/andi/rest_crud/service/PostService.kt`: 게시글 생성, 수정, 삭제 책임이 모인 Before 기준 Service입니다.
+- `src/main/kotlin/com/andi/rest_crud/service/AuthService.kt`: 회원가입, 로그인, 현재 사용자 조회 흐름을 확인하는 Service입니다.
+- `src/main/kotlin/com/andi/rest_crud/exception/GlobalExceptionHandler.kt`: 예외 응답 책임을 한곳에서 확인합니다.
+- `src/test/kotlin/com/andi/rest_crud/service/PostServiceTest.kt`: 게시글 Service 동작 보존 기준입니다.
+- `src/test/kotlin/com/andi/rest_crud/service/AuthServiceTest.kt`: 인증 Service 동작 보존 기준입니다.
+- `src/test/kotlin/com/andi/rest_crud/support/TestFixtureFactory.kt`: 테스트 입력을 반복 없이 만드는 기준입니다.
 
-- Behavior preservation: 외부 동작을 보존하면서 내부 구조만 바꾸는 기준입니다.
-- Feature-based package: 기능별로 api, application, domain, persistence 같은 파일을 가까이 둡니다.
-- Responsibility boundary: 한 클래스가 너무 많은 이유로 바뀌지 않도록 책임을 나눕니다.
-- Common package: 정말 여러 기능이 함께 쓰는 책임만 둡니다.
-- Test safety net: 리팩토링 전후 동작이 유지되는지 확인하는 기준입니다.
+왜 이 코드를 보는지 먼저 정리합니다.
+리팩토링은 파일 이름을 바꾸는 일이 아니라, 변경 이유가 섞인 코드를 테스트로 지키며 나누는 일입니다.
 
-## 5. 짧은 예제와 해설
-
-```text
-post/api
-post/application
-post/domain
-post/persistence
+```kotlin
+@Test
+fun `update는 작성자만 게시글을 수정한다`() {
+    val post = TestFixtureFactory.postEntity(author = "owner@example.com")
+    val request = TestFixtureFactory.postUpdateRequest()
+}
 ```
 
-이 구조는 글 기능과 관련된 입구, 처리 흐름, 도메인 모델, 저장소 접근을 같은 기능 안에서 찾게 해줍니다.
-중요한 점은 이름만 바꾸는 것이 아니라, 각 파일이 어떤 책임으로 바뀌는지 테스트와 함께 확인하는 것입니다.
+이 코드는 리팩토링 뒤에도 작성자 검증 동작이 유지되어야 한다는 문제를 해결합니다.
+패키지를 옮겨도 이 테스트가 통과해야 외부 동작을 유지했다고 볼 수 있습니다.
 
-## 6. 다음 구현으로 연결되는 지점
+## 5. 실행/테스트 결과로 확인할 것
 
-구현 단계에서는 먼저 현재 테스트 결과를 확인한 뒤, package 이동과 import 정리를 작게 나누어 진행합니다.
-테스트가 통과한 뒤에만 Service 책임 분리나 예외 응답 정리처럼 동작에 영향을 줄 수 있는 보강을 수행합니다.
+```bash
+./gradlew test
+```
 
-<details>
-<summary>멘토용 설명 포인트</summary>
+리팩토링 전후 같은 명령을 실행합니다.
+실패하면 package 이동 문제인지, 책임 분리 중 동작을 바꾼 문제인지 나누어 봅니다.
 
-- 멘티가 구조 이름을 외우는 데 머무르면 "이 변경이 어떤 파일 탐색 문제를 줄이나요?"라고 묻습니다.
-- 패키지 이동과 책임 분리를 동시에 하려 하면 테스트 기준을 먼저 잡게 합니다.
-- `common`에 넣는 파일은 여러 기능이 함께 쓰는 책임인지 확인하게 합니다.
+## 6. 한계와 다음 개선 방향
 
-</details>
+이번 시퀀스는 대규모 아키텍처 개편이 아닙니다.
+테스트로 동작을 보존하면서 구조를 읽기 좋게 정리하는 기초 단계입니다.
+다음 시퀀스에서는 정리된 책임 위에서 이벤트 발행과 소비 흐름을 다룹니다.

@@ -5,11 +5,11 @@
 
 ## 이 레포에서 배우는 것
 
-- 기존 Service를 다시 읽고 역할이 섞인 부분 찾기
-- Validation, Exception Handling, 테스트를 하나의 흐름으로 다시 묶기
-- 기존 코드를 더 읽기 쉽고 점검하기 쉬운 형태로 다듬기
-- README와 문서를 다시 보기 쉬운 형태로 정리하기
-- 변경에 강한 코드 기준을 실제 서비스 코드로 이해하기
+- 기능이 늘어난 뒤 파일을 찾기 어려워지는 문제
+- 기존 Service에서 책임이 섞인 부분 찾기
+- 테스트로 Before 동작을 고정하고 After 동작을 비교하기
+- package 이동 뒤 import, component scan, API 응답을 확인하기
+- Validation, Exception Handling, 테스트를 하나의 검증 흐름으로 묶기
 
 ## 시작 방법
 

@@ -7,7 +7,7 @@
 
 ## `11-implementation`
 
-- 학생이 리팩토링과 기초 보강을 직접 수행하는 starter 브랜치입니다.
+- 학생이 리팩토링과 기초 보강을 직접 수행하는 학생 시작 브랜치입니다.
 - 핵심 TODO는 Service, Exception Handling, 테스트, README 보강에 집중됩니다.
 
 ## `11-answer`
