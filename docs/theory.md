@@ -38,13 +38,13 @@
 
 ```kotlin
 @Test
-fun `update는 작성자만 게시글을 수정한다`() {
-    val post = TestFixtureFactory.postEntity(author = "owner@example.com")
-    val request = TestFixtureFactory.postUpdateRequest()
+fun `create는 요청 값을 저장하고 응답으로 돌려준다`() {
+    val request = TestFixtureFactory.postCreateRequest()
+    val savedPost = TestFixtureFactory.postEntity(id = 1L)
 }
 ```
 
-이 코드는 리팩토링 뒤에도 작성자 검증 동작이 유지되어야 한다는 문제를 해결합니다.
+이 코드는 리팩토링 뒤에도 게시글 생성 응답 동작이 유지되어야 한다는 문제를 해결합니다.
 패키지를 옮겨도 이 테스트가 통과해야 외부 동작을 유지했다고 볼 수 있습니다.
 
 ## 5. 실행/테스트 결과로 확인할 것

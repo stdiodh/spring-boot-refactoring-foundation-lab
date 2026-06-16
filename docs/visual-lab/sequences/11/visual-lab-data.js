@@ -277,11 +277,11 @@ window.visualLabData = {
   "codePoints": [
     {
       "id": "service-responsibility",
-      "title": "Service 내부 책임을 작은 함수로 나눕니다",
+      "title": "Service는 저장 흐름을 한 곳에서 조립합니다",
       "file": "src/main/kotlin/com/andi/rest_crud/service/PostService.kt",
       "language": "kotlin",
-      "snippet": "fun create(request: PostCreateRequest): PostResponse {\n    val command = validateCreateRequest(request)\n    val savedPost = postRepository.save(buildPost(command))\n    return toResponse(savedPost)\n}\n\nprivate fun validateCreateRequest(request: PostCreateRequest): PostCommand {\n    return validatePostFields(\n        title = request.title,\n        content = request.content,\n        author = request.author\n    )\n}",
-      "explanation": "외부 동작은 유지하면서 검증, 생성, 응답 변환 책임을 읽기 쉽게 분리합니다.",
+      "snippet": "fun create(request: PostCreateRequest): PostResponse {\n    val savedPost = postRepository.save(\n        PostEntity(\n            title = request.title,\n            content = request.content,\n            author = request.author\n        )\n    )\n\n    return PostResponse.from(savedPost)\n}",
+      "explanation": "현재 starter code에서 생성, 저장, 응답 변환이 한 Service 흐름에 모여 있음을 먼저 확인합니다.",
       "check": "함수 분리 후 API 응답 모양이 바뀌지 않았는지 테스트로 확인합니다."
     },
     {
@@ -289,8 +289,8 @@ window.visualLabData = {
       "title": "리팩토링 전후 테스트로 동작을 고정합니다",
       "file": "src/test/kotlin/com/andi/rest_crud/service/PostServiceTest.kt",
       "language": "kotlin",
-      "snippet": "@Test\nfun `create는 공백만 있는 제목이면 서비스 레벨 검증 예외를 던진다`() {\n    val invalidRequest = TestFixtureFactory.postCreateRequest(title = \"   \")\n\n    val exception = assertThrows(InvalidPostRequestException::class.java) {\n        postService.create(invalidRequest)\n    }\n\n    assertEquals(\"title은 비어 있을 수 없습니다.\", exception.errors[\"title\"])\n}",
-      "explanation": "구조를 바꾸기 전에 실패/성공 기대값을 테스트로 붙잡습니다.",
+      "snippet": "@Test\nfun `create는 요청 값을 저장하고 응답으로 돌려준다`() {\n    val request = TestFixtureFactory.postCreateRequest()\n    val savedPost = TestFixtureFactory.postEntity(\n        id = 1L,\n        title = request.title,\n        content = request.content,\n        author = request.author\n    )\n    `when`(postRepository.save(any(PostEntity::class.java))).thenReturn(savedPost)\n\n    val result = postService.create(request)\n\n    assertEquals(1L, result.id)\n    assertEquals(request.title, result.title)\n}",
+      "explanation": "구조를 바꾸기 전에 현재 성공 기대값을 테스트로 붙잡습니다.",
       "check": "리팩토링 전후 같은 테스트 명령이 통과하는지 비교합니다."
     }
   ],
@@ -329,9 +329,9 @@ window.visualLabData = {
       "question": "코드 구조를 바꿔도 기능이 그대로라는 것을 무엇으로 확인할까?",
       "goal": "테스트로 동작을 고정하고, Service 책임 분리와 검증/예외 응답 보강을 작은 단위로 진행합니다.",
       "source": {
-        "theory": "../theory.md",
-        "implementation": "../implementation.md",
-        "checklist": "../checklist.md"
+        "theory": "../../../theory.md",
+        "implementation": "../../../implementation.md",
+        "checklist": "../../../checklist.md"
       },
       "why": {
         "problem": "기능이 늘어난 Service는 입력 정리, 검증, 저장소 호출, 응답 변환, 예외 처리가 한 메서드에 섞이기 쉽습니다.",
@@ -661,11 +661,11 @@ window.visualLabData = {
       "codePoints": [
         {
           "id": "service-responsibility",
-          "title": "Service 내부 책임을 작은 함수로 나눕니다",
+          "title": "Service는 저장 흐름을 한 곳에서 조립합니다",
           "file": "src/main/kotlin/com/andi/rest_crud/service/PostService.kt",
           "language": "kotlin",
-          "snippet": "fun create(request: PostCreateRequest): PostResponse {\n    val command = validateCreateRequest(request)\n    val savedPost = postRepository.save(buildPost(command))\n    return toResponse(savedPost)\n}\n\nprivate fun validateCreateRequest(request: PostCreateRequest): PostCommand {\n    return validatePostFields(\n        title = request.title,\n        content = request.content,\n        author = request.author\n    )\n}",
-          "explanation": "외부 동작은 유지하면서 검증, 생성, 응답 변환 책임을 읽기 쉽게 분리합니다.",
+          "snippet": "fun create(request: PostCreateRequest): PostResponse {\n    val savedPost = postRepository.save(\n        PostEntity(\n            title = request.title,\n            content = request.content,\n            author = request.author\n        )\n    )\n\n    return PostResponse.from(savedPost)\n}",
+          "explanation": "현재 starter code에서 생성, 저장, 응답 변환이 한 Service 흐름에 모여 있음을 먼저 확인합니다.",
           "check": "함수 분리 후 API 응답 모양이 바뀌지 않았는지 테스트로 확인합니다."
         },
         {
@@ -673,8 +673,8 @@ window.visualLabData = {
           "title": "리팩토링 전후 테스트로 동작을 고정합니다",
           "file": "src/test/kotlin/com/andi/rest_crud/service/PostServiceTest.kt",
           "language": "kotlin",
-          "snippet": "@Test\nfun `create는 공백만 있는 제목이면 서비스 레벨 검증 예외를 던진다`() {\n    val invalidRequest = TestFixtureFactory.postCreateRequest(title = \"   \")\n\n    val exception = assertThrows(InvalidPostRequestException::class.java) {\n        postService.create(invalidRequest)\n    }\n\n    assertEquals(\"title은 비어 있을 수 없습니다.\", exception.errors[\"title\"])\n}",
-          "explanation": "구조를 바꾸기 전에 실패/성공 기대값을 테스트로 붙잡습니다.",
+          "snippet": "@Test\nfun `create는 요청 값을 저장하고 응답으로 돌려준다`() {\n    val request = TestFixtureFactory.postCreateRequest()\n    val savedPost = TestFixtureFactory.postEntity(\n        id = 1L,\n        title = request.title,\n        content = request.content,\n        author = request.author\n    )\n    `when`(postRepository.save(any(PostEntity::class.java))).thenReturn(savedPost)\n\n    val result = postService.create(request)\n\n    assertEquals(1L, result.id)\n    assertEquals(request.title, result.title)\n}",
+          "explanation": "구조를 바꾸기 전에 현재 성공 기대값을 테스트로 붙잡습니다.",
           "check": "리팩토링 전후 같은 테스트 명령이 통과하는지 비교합니다."
         }
       ],
