@@ -1,7 +1,7 @@
 # 이론 정리
 
 > 이번 시퀀스는 동작을 바꾸지 않고 구조를 더 읽기 좋게 만드는 리팩토링 기초 단계입니다.
-> 이 브랜치에서는 `AuthService`, `PostService`, `GlobalExceptionHandler`, Service 테스트를 기준으로 책임 분리와 동작 보존을 비교합니다. 중앙 커리큘럼의 feature-based 전환 목표는 이 책임 경계를 바탕으로 이어지는 구조 개선 기준입니다.
+> 이 브랜치에서는 `AuthService`, `PostService`, `GlobalExceptionHandler`, Service 테스트를 기준으로 책임 분리와 동작 보존을 비교합니다. feature-based 전환은 이 책임 경계를 바탕으로 이어지는 후속 선택지입니다.
 
 ## 1. Problem - 왜 리팩토링이 필요한가
 
@@ -27,7 +27,7 @@
 | 예외 응답 | service 예외를 `ErrorResponse`로 변환 | 실패 응답 구조를 일관되게 유지합니다. |
 | feature-based 전환 | 기능별 package 경계를 목표로 둠 | 향후 변경 파일을 가까이 둘 기준을 마련합니다. |
 
-정답 구현의 직접 범위는 helper 메서드와 검증/예외/테스트 보강입니다. feature-based package 이동은 중앙 목표로 남아 있으며, 같은 테스트 안전망을 먼저 세운 뒤 진행해야 합니다.
+정답 구현의 직접 범위는 helper 메서드와 검증/예외/테스트 보강입니다. feature-based package 이동은 같은 테스트 안전망을 세운 뒤 검토할 후속 선택지입니다.
 
 ## 3. API / 실행 시퀀스 다이어그램
 
@@ -254,7 +254,7 @@ flowchart LR
 <summary>멘토용 설명 포인트</summary>
 
 - helper 메서드가 많아지는 것 자체가 목표는 아니며, 책임 경계가 선명해지는지가 기준입니다.
-- 중앙 목표인 feature-based 전환과 현재 브랜치의 service 책임 분리 작업을 혼동하지 않게 구분합니다.
+- 후속 선택지인 feature-based 전환과 현재 브랜치의 service 책임 분리 작업을 혼동하지 않게 구분합니다.
 - 서비스 검증은 DTO 검증을 대체하는 것이 아니라 핵심 비즈니스 흐름을 한 번 더 방어하는 장치입니다.
 - answer 비교 시 코드 길이보다 수정 지점이 빨리 보이는지 질문합니다.
 
