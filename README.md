@@ -45,7 +45,8 @@ docker compose up -d
 테스트가 확인하는 것:
 
 - 리팩토링 전 현재 API 동작을 고정합니다.
-- feature-based 패키지 구조로 이동한 뒤에도 같은 테스트가 통과하는지 확인합니다.
+- Service helper 추출과 예외 보강 뒤에도 같은 테스트가 통과하는지 확인합니다.
+- feature-based 패키지 이동은 현재 답안에 포함되지 않은 후속 선택지입니다.
 - 패키지 변경이 API path, status code, response body를 바꾸지 않았는지 확인합니다.
 
 실패하면 먼저 볼 것:

@@ -9,7 +9,7 @@
 
 1. Before 상태에서 `./gradlew test`를 실행합니다.
 2. `PostService.kt`, `AuthService.kt`, `GlobalExceptionHandler.kt`의 책임을 읽습니다.
-3. feature 단위 package 이동 후보를 정합니다.
+3. feature 단위 package 이동은 후속 선택지로 남기고, 현재는 Service 안의 작은 책임 분리 후보를 정합니다.
 4. package 선언과 import를 정리합니다.
 5. After 상태에서 `./gradlew test`를 다시 실행합니다.
 
