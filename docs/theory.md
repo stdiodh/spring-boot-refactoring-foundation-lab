@@ -1,7 +1,7 @@
 # 이론 정리
 
 > 이번 시퀀스는 동작을 바꾸지 않고 구조를 더 읽기 좋게 만드는 리팩토링 기초 단계입니다.
-> 중앙 커리큘럼은 feature-based 구조 전환까지 목표로 두지만, 현재 브랜치의 직접 작업 지점은 `AuthService`, `PostService`, `GlobalExceptionHandler`, Service 테스트를 통해 책임 경계와 동작 보존 기준을 잡는 것입니다.
+> 현재 시퀀스의 직접 작업 지점은 `AuthService`, `PostService`, `GlobalExceptionHandler`, Service 테스트를 통해 책임 경계와 동작 보존 기준을 잡는 것입니다. feature-based 구조 전환은 후속 선택지입니다.
 
 ## 1. Problem - 왜 리팩토링이 필요한가
 
@@ -236,7 +236,7 @@ flowchart LR
 <summary>멘토용 설명 포인트</summary>
 
 - 리팩토링을 “코드를 예쁘게 만드는 작업”으로만 설명하지 않습니다.
-- 중앙 목표인 feature-based 전환과 현재 브랜치의 service 책임 분리 작업을 혼동하지 않게 구분합니다.
+- 후속 선택지인 feature-based 전환과 현재 브랜치의 service 책임 분리 작업을 혼동하지 않게 구분합니다.
 - 변경 비용, 테스트 안전장치, 문서화까지 함께 묶어 설명합니다.
 - starter 브랜치에서는 세부 구현을 먼저 보여주지 말고 어떤 책임을 분리할지 질문으로 유도합니다.
 
