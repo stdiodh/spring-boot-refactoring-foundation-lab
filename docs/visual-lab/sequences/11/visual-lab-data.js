@@ -280,7 +280,7 @@ window.visualLabData = {
       "title": "Service는 저장 흐름을 한 곳에서 조립합니다",
       "file": "src/main/kotlin/com/andi/rest_crud/service/PostService.kt",
       "language": "kotlin",
-      "snippet": "fun create(request: PostCreateRequest): PostResponse {\n    val savedPost = postRepository.save(\n        PostEntity(\n            title = request.title,\n            content = request.content,\n            author = request.author\n        )\n    )\n\n    return PostResponse.from(savedPost)\n}",
+      "snippet": "fun create(request: PostCreateRequest, authorEmail: String): PostResponse {\n    val savedPost = postRepository.save(\n        PostEntity(\n            title = request.title,\n            content = request.content,\n            author = authorEmail\n        )\n    )\n\n    return PostResponse.from(savedPost)\n}",
       "explanation": "현재 starter code에서 생성, 저장, 응답 변환이 한 Service 흐름에 모여 있음을 먼저 확인합니다.",
       "check": "함수 분리 후 API 응답 모양이 바뀌지 않았는지 테스트로 확인합니다."
     },
@@ -289,7 +289,7 @@ window.visualLabData = {
       "title": "리팩토링 전후 테스트로 동작을 고정합니다",
       "file": "src/test/kotlin/com/andi/rest_crud/service/PostServiceTest.kt",
       "language": "kotlin",
-      "snippet": "@Test\nfun `create는 요청 값을 저장하고 응답으로 돌려준다`() {\n    val request = TestFixtureFactory.postCreateRequest()\n    val savedPost = TestFixtureFactory.postEntity(\n        id = 1L,\n        title = request.title,\n        content = request.content,\n        author = request.author\n    )\n    `when`(postRepository.save(any(PostEntity::class.java))).thenReturn(savedPost)\n\n    val result = postService.create(request)\n\n    assertEquals(1L, result.id)\n    assertEquals(request.title, result.title)\n}",
+      "snippet": "@Test\nfun `create는 요청 값을 저장하고 응답으로 돌려준다`() {\n    val request = TestFixtureFactory.postCreateRequest()\n    val savedPost = TestFixtureFactory.postEntity(\n        id = 1L,\n        title = request.title,\n        content = request.content,\n        author = \"owner@example.com\"\n    )\n    `when`(postRepository.save(any(PostEntity::class.java))).thenReturn(savedPost)\n\n    val result = postService.create(request, \"owner@example.com\")\n\n    assertEquals(1L, result.id)\n    assertEquals(\"owner@example.com\", result.author)\n}",
       "explanation": "구조를 바꾸기 전에 현재 성공 기대값을 테스트로 붙잡습니다.",
       "check": "리팩토링 전후 같은 테스트 명령이 통과하는지 비교합니다."
     }
