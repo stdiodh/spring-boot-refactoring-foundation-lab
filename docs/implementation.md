@@ -42,8 +42,8 @@ fun login(request: LoginRequest): TokenResponse {
 ### 해야 할 일
 
 ```kotlin
-fun create(request: PostCreateRequest): PostResponse {
-    val command = validateCreateRequest(request)
+fun create(request: PostCreateRequest, authorEmail: String): PostResponse {
+    val command = validateCreateRequest(request, authorEmail)
     val savedPost = postRepository.save(buildPost(command))
     return toResponse(savedPost)
 }

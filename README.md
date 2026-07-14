@@ -26,8 +26,6 @@ starter 브랜치에서 먼저 책임이 섞인 메서드를 찾고 직접 정�
 1. [이론 정리](./docs/theory.md)
 2. [구현 가이드](./docs/implementation.md)
 3. [체크리스트](./docs/checklist.md)
-4. [참고 구현 가이드](./docs/answer-guide.md)
-5. [제공 자산 정리](./docs/assets.md)
 
 ## 실행 / 테스트 방법
 
