@@ -9,6 +9,28 @@ window.visualLabData = {
     "kind": "refactor",
     "title": "Behavior Invariant Map",
     "instruction": "변경 범위를 선택해 Before와 After 사이에서 Service 동작을 지키는 단위 테스트 증거를 확인하세요.",
+    "visual": {
+      "src": "../../assets/diagrams/11-behavior-invariant.svg",
+      "alt": "Before와 After의 Service 내부 구조는 달라지지만 같은 테스트 입력에 대한 반환값 예외와 명시적으로 검증한 상호작용은 유지되는 비교 구조",
+      "caption": "내부 책임을 나누더라도 기존 테스트가 실제로 단언한 Service 결과와 예외는 Before와 After에서 같아야 합니다."
+    },
+    "terms": [
+      { "term": "baseline", "meaning": "구조 변경 전에 테스트로 고정한 현재 동작 기준" },
+      { "term": "invariant", "meaning": "내부 구조가 달라져도 전후에 반드시 같아야 하는 관찰 가능한 동작" },
+      { "term": "helper", "meaning": "Service의 한 가지 작은 책임을 이름으로 분리한 메서드" },
+      { "term": "regression", "meaning": "구조 변경 때문에 이미 되던 동작이 깨지는 회귀" }
+    ],
+    "comparison": {
+      "label": "구조 변경 전후의 불변 조건",
+      "left": {
+        "title": "Before baseline",
+        "body": "리팩토링 전에 통과한 Service 단위 테스트가 입력, 반환값, 예외와 명시적으로 검증한 collaborator 호출의 기준을 고정합니다."
+      },
+      "right": {
+        "title": "After invariant",
+        "body": "helper로 책임을 나눈 뒤에도 같은 단위 테스트가 통과해야 합니다. 내부 구조만 달라지고 관찰 가능한 동작은 유지됩니다."
+      }
+    },
     "nodes": {
       "developer": {
         "label": "Developer",
@@ -120,10 +142,20 @@ window.visualLabData = {
     "scenarios": [
       {
         "id": "refactor-baseline",
-        "label": "Before 동작 고정",
+        "label": "리팩터링 시작 전",
         "flowId": "before-after-test",
         "tone": "signal",
-        "prompt": "구조를 바꾸기 전에 현재 Service 동작을 단위 테스트로 고정합니다.",
+        "prompt": "Service 구조를 아직 바꾸지 않았습니다. 같은 입력으로 After와 비교할 기준을 무엇으로 남길지 예측합니다.",
+        "prediction": {
+          "prompt": "helper를 추출하기 전에 먼저 기록할 기준은 무엇일까요?",
+          "options": [
+            { "id": "baseline", "label": "변경 전 단위 테스트 결과" },
+            { "id": "files", "label": "변경 후 파일 수" },
+            { "id": "package", "label": "새 패키지 위치" }
+          ],
+          "answer": "baseline",
+          "explanation": "통과한 Before 기준이 있어야 After 실패가 구조 변경에서 생겼는지 비교할 수 있습니다."
+        },
         "route": [
           "현재 Service 동작",
           "./gradlew test",
@@ -174,7 +206,7 @@ window.visualLabData = {
           },
           {
             "label": "비교 기준",
-            "value": "입력 · Repository 호출 · 반환값",
+            "value": "동일 입력 · 반환값 · 예외",
             "tone": "signal"
           }
         ],
@@ -183,16 +215,26 @@ window.visualLabData = {
       },
       {
         "id": "refactor-small-split",
-        "label": "작은 책임 분리",
+        "label": "helper 추출 후",
         "flowId": "service-split",
         "tone": "recovered",
-        "prompt": "입력 정리, 조회, 검증, 변환 책임을 작은 helper로 나누고 같은 테스트를 다시 실행합니다.",
+        "prompt": "입력 정리, 조회, 검증, 변환 중 한 책임을 helper로 옮겼습니다. 구조 변경 전과 무엇을 비교할지 예측합니다.",
+        "prediction": {
+          "prompt": "작은 helper 추출 뒤 무엇이 같아야 리팩토링이라고 부를 수 있을까요?",
+          "options": [
+            { "id": "behavior", "label": "공개 Service 반환값·예외" },
+            { "id": "helpers", "label": "private helper 개수" },
+            { "id": "package", "label": "파일 위치" }
+          ],
+          "answer": "behavior",
+          "explanation": "목표는 내부 책임을 읽기 쉽게 나누면서 현재 단위 테스트가 관찰하는 동작을 유지하는 것입니다."
+        },
         "route": [
           "Baseline tests",
           "PostService · AuthService",
           "작은 helper 추출",
           "같은 테스트 재실행",
-          "입력 · 저장 호출 · 반환값 유지"
+          "기존 assertion 결과 비교"
         ],
         "diagram": {
           "caption": "Before와 After에 같은 Service 입력과 테스트 조건을 적용하고 반환값과 예외 타입을 비교해 구조 변경만 일어났는지 확인합니다.",
@@ -307,15 +349,25 @@ window.visualLabData = {
       },
       {
         "id": "refactor-contract-changed",
-        "label": "Service 동작 변경 감지",
+        "label": "After assertion 불일치",
         "flowId": "before-after-test",
         "tone": "blocked",
-        "prompt": "helper 추출 중 반환값이나 예외 타입이 달라졌을 때 단위 테스트가 어디서 멈추는지 확인합니다.",
+        "prompt": "helper 추출 뒤 같은 단위 테스트의 반환값 또는 예외 assertion이 달라졌습니다. 첫 조사 범위를 예측합니다.",
+        "prediction": {
+          "prompt": "After 테스트에서 반환값이나 예외가 달라졌다면 무엇을 의심해야 할까요?",
+          "options": [
+            { "id": "refactor", "label": "정상적인 구조 개선 결과" },
+            { "id": "behavior", "label": "구조 변경에 섞인 기능 동작 변경" },
+            { "id": "coverage", "label": "테스트가 너무 많이 통과한 상태" }
+          ],
+          "answer": "behavior",
+          "explanation": "리팩토링은 동작을 보존해야 합니다. 마지막 책임 변경에서 반환·예외 계약이 달라졌는지 좁혀야 합니다."
+        },
         "route": [
           "Baseline tests",
           "Service 검증 분리",
           "After unit tests",
-          "Service input · interaction · result invariant"
+          "Same input · asserted result invariant"
         ],
         "diagram": {
           "caption": "After 단위 테스트 실패는 HTTP 계약이 아니라 현재 테스트가 관찰하는 Service 반환값 또는 예외 타입이 달라졌다는 신호입니다.",
@@ -383,16 +435,26 @@ window.visualLabData = {
             "tone": "blocked"
           }
         ],
-        "evidence": "리팩토링 후 테스트 실패는 입력, Repository 상호작용, 반환값과 예외 타입이 유지되는지 확인하게 합니다.",
+        "evidence": "리팩토링 후 테스트 실패는 같은 입력에서 기존 assertion의 반환값과 예외 타입이 유지되는지 확인하게 합니다. collaborator 호출은 테스트가 명시적으로 검증한 경우에만 불변 조건입니다.",
         "outcome": "구조 개선과 기능 변경을 섞지 않고 마지막 책임 변경을 되짚습니다.",
         "stopAfter": 2
       },
       {
         "id": "refactor-package-expansion",
-        "label": "범위가 커진 변경",
+        "label": "helper·package 이동 동시 변경",
         "flowId": "service-split",
         "tone": "warning",
-        "prompt": "작은 helper 분리와 feature-based package 이동을 한 번에 섞으려는 경우 범위를 비교합니다.",
+        "prompt": "작은 helper 분리와 feature-based package 이동을 한 변경에 함께 넣으려 합니다. 현재 테스트로 닫을 수 있는 범위를 예측합니다.",
+        "prediction": {
+          "prompt": "현재 테스트 안전망에서 가장 작은 검증 가능한 변경은 무엇일까요?",
+          "options": [
+            { "id": "helper", "label": "Service 안의 작은 helper 책임 분리" },
+            { "id": "package", "label": "feature package 전체 이동" },
+            { "id": "contract", "label": "API 계약과 구조를 동시에 변경" }
+          ],
+          "answer": "helper",
+          "explanation": "패키지 이동은 후속 선택지입니다. 현재 범위에서는 같은 Service 단위 테스트로 확인 가능한 작은 책임 분리가 안전합니다."
+        },
         "route": [
           "혼합된 Service 책임",
           "작은 helper 분리",

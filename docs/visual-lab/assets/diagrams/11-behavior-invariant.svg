@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 500" role="img" aria-labelledby="title desc">
+  <title id="title">Service 리팩터링 전후의 테스트 불변 조건</title>
+  <desc id="desc">Before의 한 Service method를 After의 Service 흐름과 작은 helper로 나눕니다. 같은 테스트 입력에서 기존 반환값과 예외를 유지하며 collaborator 호출은 테스트가 명시적으로 검증한 경우에만 비교합니다.</desc>
+  <metadata>Source: A&amp;I Sequence 11 theory, implementation, checklist, PostServiceTest, AuthServiceTest. License: repository policy; no standalone license grant.</metadata>
+  <defs>
+    <marker id="arrow" markerUnits="userSpaceOnUse" markerWidth="12" markerHeight="12" refX="11" refY="6" orient="auto">
+      <path d="M0 0 12 6 0 12Z" fill="#2955e4"/>
+    </marker>
+  </defs>
+  <rect width="720" height="500" rx="22" fill="#f1f7ff"/>
+  <text x="24" y="46" fill="#111b3f" font-family="system-ui, sans-serif" font-size="30" font-weight="850">BEHAVIOR INVARIANT</text>
+
+  <rect x="20" y="82" width="285" height="240" rx="16" fill="#ffffff" stroke="#6473a0" stroke-width="3"/>
+  <text x="44" y="126" fill="#0c2691" font-family="system-ui, sans-serif" font-size="28" font-weight="900">BEFORE</text>
+  <rect x="44" y="151" width="237" height="137" rx="13" fill="#eaf0fb" stroke="#0c2691" stroke-width="3"/>
+  <text x="162" y="194" text-anchor="middle" fill="#0c2691" font-family="system-ui, sans-serif" font-size="26" font-weight="900">Service method</text>
+  <text x="162" y="235" text-anchor="middle" fill="#111b3f" font-family="system-ui, sans-serif" font-size="24">정리 · 조회</text>
+  <text x="162" y="269" text-anchor="middle" fill="#111b3f" font-family="system-ui, sans-serif" font-size="24">검증 · 변환</text>
+
+  <path d="M305 202H395" stroke="#2955e4" stroke-width="4" marker-end="url(#arrow)"/>
+  <text x="350" y="184" text-anchor="middle" fill="#111b3f" font-family="system-ui, sans-serif" font-size="24" font-weight="800">helper</text>
+
+  <rect x="405" y="82" width="295" height="240" rx="16" fill="#ffffff" stroke="#0c2691" stroke-width="3"/>
+  <text x="429" y="126" fill="#0c2691" font-family="system-ui, sans-serif" font-size="28" font-weight="900">AFTER</text>
+  <rect x="429" y="151" width="247" height="64" rx="12" fill="#ecfbfa" stroke="#6473a0" stroke-width="3"/>
+  <text x="552" y="192" text-anchor="middle" fill="#0c2691" font-family="system-ui, sans-serif" font-size="24" font-weight="900">Service 흐름 조합</text>
+  <rect x="429" y="232" width="247" height="64" rx="12" fill="#eaf0fb" stroke="#6473a0" stroke-width="3"/>
+  <text x="552" y="273" text-anchor="middle" fill="#111b3f" font-family="system-ui, sans-serif" font-size="24" font-weight="800">작은 helper 책임</text>
+
+  <rect x="20" y="354" width="680" height="123" rx="14" fill="#0c2691"/>
+  <text x="44" y="390" fill="#ffffff" font-family="system-ui, sans-serif" font-size="26" font-weight="900">같은 테스트가 확인하는 것</text>
+  <text x="44" y="428" fill="#ffffff" font-family="system-ui, sans-serif" font-size="24">같은 입력 · 반환값 · 예외</text>
+  <text x="44" y="462" fill="#ffffff" font-family="system-ui, sans-serif" font-size="24">명시적으로 verify한 collaborator 호출만</text>
+</svg>
