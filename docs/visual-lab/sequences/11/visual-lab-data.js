@@ -5,6 +5,533 @@ window.visualLabData = {
   "subtitle": "Refactoring and foundation reinforcement",
   "goal": "테스트로 동작을 고정하고, Service 책임 분리와 검증/예외 응답 보강을 작은 단위로 진행합니다.",
   "problem": "기능이 늘어난 Service는 입력 정리, 검증, 저장소 호출, 응답 변환, 예외 처리가 한 메서드에 섞이기 쉽습니다.",
+  "workbench": {
+    "kind": "refactor",
+    "title": "Behavior Invariant Map",
+    "instruction": "변경 범위를 선택해 Before와 After 사이에서 Service 동작을 지키는 단위 테스트 증거를 확인하세요.",
+    "visual": {
+      "src": "../../assets/diagrams/11-behavior-invariant.svg",
+      "alt": "Before와 After의 Service 내부 구조는 달라지지만 같은 테스트 입력에 대한 반환값 예외와 명시적으로 검증한 상호작용은 유지되는 비교 구조",
+      "caption": "내부 책임을 나누더라도 기존 테스트가 실제로 단언한 Service 결과와 예외는 Before와 After에서 같아야 합니다."
+    },
+    "terms": [
+      { "term": "baseline", "meaning": "구조 변경 전에 테스트로 고정한 현재 동작 기준" },
+      { "term": "invariant", "meaning": "내부 구조가 달라져도 전후에 반드시 같아야 하는 관찰 가능한 동작" },
+      { "term": "helper", "meaning": "Service의 한 가지 작은 책임을 이름으로 분리한 메서드" },
+      { "term": "regression", "meaning": "구조 변경 때문에 이미 되던 동작이 깨지는 회귀" }
+    ],
+    "comparison": {
+      "label": "구조 변경 전후의 불변 조건",
+      "left": {
+        "title": "Before baseline",
+        "body": "리팩토링 전에 통과한 Service 단위 테스트가 입력, 반환값, 예외와 명시적으로 검증한 collaborator 호출의 기준을 고정합니다."
+      },
+      "right": {
+        "title": "After invariant",
+        "body": "helper로 책임을 나눈 뒤에도 같은 단위 테스트가 통과해야 합니다. 내부 구조만 달라지고 관찰 가능한 동작은 유지됩니다."
+      }
+    },
+    "nodes": {
+      "developer": {
+        "label": "Developer",
+        "icon": "person",
+        "kind": "actor",
+        "role": "작은 변경과 재검증을 반복",
+        "boundary": "Refactoring loop"
+      },
+      "service-input": {
+        "label": "Service test input",
+        "icon": "fixture",
+        "kind": "test fixture",
+        "role": "동일하게 유지할 입력과 mock 조건",
+        "boundary": "Unit test"
+      },
+      "baseline-tests": {
+        "label": "PostServiceTest · AuthServiceTest",
+        "icon": "test",
+        "kind": "unit tests",
+        "role": "현재 Service 동작의 비교 기준",
+        "boundary": "Before evidence",
+        "codePointIds": [
+          "regression-test"
+        ]
+      },
+      "before-service": {
+        "label": "Before Service",
+        "icon": "service",
+        "kind": "code under test",
+        "role": "책임이 섞여 있는 현재 Service 구현",
+        "boundary": "Before",
+        "codePointIds": [
+          "service-responsibility"
+        ]
+      },
+      "baseline-evidence": {
+        "label": "Baseline evidence",
+        "icon": "evidence",
+        "kind": "unit behavior evidence",
+        "role": "반환값과 예외 타입의 현재 기준",
+        "boundary": "Before evidence"
+      },
+      "responsibility-review": {
+        "label": "Responsibility review",
+        "icon": "refactor",
+        "kind": "code review",
+        "role": "입력 정리, 조회, 검증, 변환 혼합 지점 식별",
+        "boundary": "Structural change"
+      },
+      "helper-extraction": {
+        "label": "Small helper extraction",
+        "icon": "refactor",
+        "kind": "refactoring operation",
+        "role": "한 번에 하나의 책임을 이름 있는 단위로 분리",
+        "boundary": "Structural change",
+        "codePointIds": [
+          "service-responsibility"
+        ]
+      },
+      "after-tests": {
+        "label": "Same Service unit tests",
+        "icon": "test",
+        "kind": "unit tests",
+        "role": "동일한 입력과 조건으로 After 재검증",
+        "boundary": "After evidence",
+        "codePointIds": [
+          "regression-test"
+        ]
+      },
+      "after-service": {
+        "label": "After Service + helpers",
+        "icon": "service",
+        "kind": "refactored code",
+        "role": "공개 Service 동작을 유지한 책임 분리 결과",
+        "boundary": "After",
+        "codePointIds": [
+          "service-responsibility"
+        ]
+      },
+      "repository-collaborator": {
+        "label": "Mocked repository condition",
+        "icon": "repository",
+        "kind": "test collaborator",
+        "role": "테스트가 준비한 조회 또는 저장 결과",
+        "boundary": "Unit test"
+      },
+      "invariant-evidence": {
+        "label": "Service behavior preserved",
+        "icon": "evidence",
+        "kind": "invariant result",
+        "role": "반환값과 예외 타입이 유지된 단위 테스트 결과",
+        "boundary": "Invariant"
+      },
+      "changed-behavior": {
+        "label": "Behavior change detected",
+        "icon": "evidence",
+        "kind": "failure evidence",
+        "role": "반환값 또는 예외 타입 차이를 알리는 테스트 실패",
+        "boundary": "Invariant"
+      },
+      "package-move": {
+        "label": "Feature-based package move",
+        "icon": "refactor",
+        "kind": "later scope",
+        "role": "안전망 이후 검토할 더 큰 구조 변경",
+        "boundary": "Later scope"
+      }
+    },
+    "scenarios": [
+      {
+        "id": "refactor-baseline",
+        "label": "리팩터링 시작 전",
+        "flowId": "before-after-test",
+        "tone": "signal",
+        "prompt": "Service 구조를 아직 바꾸지 않았습니다. 같은 입력으로 After와 비교할 기준을 무엇으로 남길지 예측합니다.",
+        "prediction": {
+          "prompt": "helper를 추출하기 전에 먼저 기록할 기준은 무엇일까요?",
+          "options": [
+            { "id": "baseline", "label": "변경 전 단위 테스트 결과" },
+            { "id": "files", "label": "변경 후 파일 수" },
+            { "id": "package", "label": "새 패키지 위치" }
+          ],
+          "answer": "baseline",
+          "explanation": "통과한 Before 기준이 있어야 After 실패가 구조 변경에서 생겼는지 비교할 수 있습니다."
+        },
+        "route": [
+          "현재 Service 동작",
+          "./gradlew test",
+          "Baseline result"
+        ],
+        "diagram": {
+          "caption": "이 baseline은 HTTP 계약이 아니라 PostServiceTest와 AuthServiceTest가 관찰하는 Service 단위 반환값과 예외 타입을 고정합니다.",
+          "lanes": [
+            {
+              "id": "before-baseline",
+              "label": "Before · Service unit behavior",
+              "description": "구조 변경 전에 같은 입력과 collaborator 조건으로 현재 동작을 기록합니다.",
+              "steps": [
+                {
+                  "from": "developer",
+                  "to": "baseline-tests",
+                  "verb": "baseline 실행",
+                  "payload": "./gradlew test",
+                  "kind": "request",
+                  "codePointIds": [
+                    "regression-test"
+                  ]
+                },
+                {
+                  "from": "baseline-tests",
+                  "to": "before-service",
+                  "verb": "공개 메서드 호출",
+                  "payload": "Service input + prepared collaborator result",
+                  "kind": "call"
+                },
+                {
+                  "from": "before-service",
+                  "to": "baseline-evidence",
+                  "verb": "현재 동작 기록",
+                  "payload": "return values + exception types",
+                  "kind": "response",
+                  "check": "현재 테스트는 HTTP path, status, body를 검증하지 않습니다."
+                }
+              ]
+            }
+          ]
+        },
+        "snapshot": [
+          {
+            "label": "Before",
+            "value": "현재 테스트 통과",
+            "tone": "signal"
+          },
+          {
+            "label": "비교 기준",
+            "value": "동일 입력 · 반환값 · 예외",
+            "tone": "signal"
+          }
+        ],
+        "evidence": "PostServiceTest와 AuthServiceTest가 리팩토링 전 Service 단위 동작의 기준을 제공합니다.",
+        "outcome": "통과한 baseline이 있어야 After 실패가 구조 변경에서 생겼는지 비교할 수 있습니다."
+      },
+      {
+        "id": "refactor-small-split",
+        "label": "helper 추출 후",
+        "flowId": "service-split",
+        "tone": "recovered",
+        "prompt": "입력 정리, 조회, 검증, 변환 중 한 책임을 helper로 옮겼습니다. 구조 변경 전과 무엇을 비교할지 예측합니다.",
+        "prediction": {
+          "prompt": "작은 helper 추출 뒤 무엇이 같아야 리팩토링이라고 부를 수 있을까요?",
+          "options": [
+            { "id": "behavior", "label": "공개 Service 반환값·예외" },
+            { "id": "helpers", "label": "private helper 개수" },
+            { "id": "package", "label": "파일 위치" }
+          ],
+          "answer": "behavior",
+          "explanation": "목표는 내부 책임을 읽기 쉽게 나누면서 현재 단위 테스트가 관찰하는 동작을 유지하는 것입니다."
+        },
+        "route": [
+          "Baseline tests",
+          "PostService · AuthService",
+          "작은 helper 추출",
+          "같은 테스트 재실행",
+          "기존 assertion 결과 비교"
+        ],
+        "diagram": {
+          "caption": "Before와 After에 같은 Service 입력과 테스트 조건을 적용하고 반환값과 예외 타입을 비교해 구조 변경만 일어났는지 확인합니다.",
+          "lanes": [
+            {
+              "id": "before-lane",
+              "label": "Before",
+              "description": "현재 Service 단위 동작을 변경 전 기준으로 남깁니다.",
+              "steps": [
+                {
+                  "from": "baseline-tests",
+                  "to": "service-input",
+                  "verb": "fixture 준비",
+                  "payload": "same requests and mock conditions",
+                  "kind": "config"
+                },
+                {
+                  "from": "service-input",
+                  "to": "before-service",
+                  "verb": "현재 구현 실행",
+                  "payload": "public Service methods",
+                  "kind": "call"
+                },
+                {
+                  "from": "before-service",
+                  "to": "baseline-evidence",
+                  "verb": "기준 저장",
+                  "payload": "return values + exception types",
+                  "kind": "response"
+                }
+              ]
+            },
+            {
+              "id": "structural-change-lane",
+              "label": "Structural change",
+              "description": "런타임 요청 이동이 아니라 코드 책임의 위치가 바뀌는 과정입니다.",
+              "steps": [
+                {
+                  "from": "before-service",
+                  "to": "responsibility-review",
+                  "verb": "혼합 책임 식별",
+                  "payload": "normalize · find · validate · transform",
+                  "kind": "compare",
+                  "codePointIds": [
+                    "service-responsibility"
+                  ]
+                },
+                {
+                  "from": "responsibility-review",
+                  "to": "helper-extraction",
+                  "verb": "작은 변경 선택",
+                  "payload": "one named responsibility",
+                  "kind": "transform"
+                },
+                {
+                  "from": "helper-extraction",
+                  "to": "after-service",
+                  "verb": "책임 재배치",
+                  "payload": "Service orchestration + private helpers",
+                  "kind": "transform"
+                }
+              ]
+            },
+            {
+              "id": "after-invariant-lane",
+              "label": "After · Invariant",
+              "description": "같은 단위 테스트 조건으로 공개 Service 동작의 보존 여부를 확인합니다.",
+              "steps": [
+                {
+                  "from": "repository-collaborator",
+                  "to": "after-service",
+                  "verb": "같은 조건 제공",
+                  "payload": "prepared repository result",
+                  "kind": "config"
+                },
+                {
+                  "from": "after-tests",
+                  "to": "after-service",
+                  "verb": "같은 테스트 재실행",
+                  "payload": "same inputs and assertions",
+                  "kind": "compare",
+                  "codePointIds": [
+                    "regression-test"
+                  ]
+                },
+                {
+                  "from": "after-service",
+                  "to": "invariant-evidence",
+                  "verb": "동작 비교 통과",
+                  "payload": "same return values + exception types",
+                  "kind": "response",
+                  "check": "private helper 모양이 아니라 공개 Service 결과를 비교합니다."
+                }
+              ]
+            }
+          ]
+        },
+        "snapshot": [
+          {
+            "label": "After",
+            "value": "책임 분리 후 동작 보존",
+            "tone": "recovered"
+          },
+          {
+            "label": "회귀 테스트",
+            "value": "같은 명령 통과",
+            "tone": "recovered"
+          }
+        ],
+        "evidence": "helper 추출 뒤에도 리팩토링 전과 같은 Service 단위 테스트 명령이 통과합니다.",
+        "outcome": "검증된 Service 동작을 바꾸지 않고 변경 이유를 작은 책임으로 구분합니다."
+      },
+      {
+        "id": "refactor-contract-changed",
+        "label": "After assertion 불일치",
+        "flowId": "before-after-test",
+        "tone": "blocked",
+        "prompt": "helper 추출 뒤 같은 단위 테스트의 반환값 또는 예외 assertion이 달라졌습니다. 첫 조사 범위를 예측합니다.",
+        "prediction": {
+          "prompt": "After 테스트에서 반환값이나 예외가 달라졌다면 무엇을 의심해야 할까요?",
+          "options": [
+            { "id": "refactor", "label": "정상적인 구조 개선 결과" },
+            { "id": "behavior", "label": "구조 변경에 섞인 기능 동작 변경" },
+            { "id": "coverage", "label": "테스트가 너무 많이 통과한 상태" }
+          ],
+          "answer": "behavior",
+          "explanation": "리팩토링은 동작을 보존해야 합니다. 마지막 책임 변경에서 반환·예외 계약이 달라졌는지 좁혀야 합니다."
+        },
+        "route": [
+          "Baseline tests",
+          "Service 검증 분리",
+          "After unit tests",
+          "Same input · asserted result invariant"
+        ],
+        "diagram": {
+          "caption": "After 단위 테스트 실패는 HTTP 계약이 아니라 현재 테스트가 관찰하는 Service 반환값 또는 예외 타입이 달라졌다는 신호입니다.",
+          "lanes": [
+            {
+              "id": "expected-before",
+              "label": "Before expectation",
+              "description": "변경 전 통과 결과를 비교 기준으로 유지합니다.",
+              "steps": [
+                {
+                  "from": "baseline-tests",
+                  "to": "before-service",
+                  "verb": "기준 동작 실행",
+                  "payload": "same Service inputs",
+                  "kind": "call"
+                },
+                {
+                  "from": "before-service",
+                  "to": "baseline-evidence",
+                  "verb": "기대 결과 기록",
+                  "payload": "return values + exception types",
+                  "kind": "response"
+                }
+              ]
+            },
+            {
+              "id": "changed-after",
+              "label": "After mismatch",
+              "description": "마지막 구조 변경에서 의도하지 않은 동작 변화가 생겼는지 좁힙니다.",
+              "steps": [
+                {
+                  "from": "after-tests",
+                  "to": "after-service",
+                  "verb": "같은 단위 테스트 실행",
+                  "payload": "same inputs and prepared collaborators",
+                  "kind": "compare"
+                },
+                {
+                  "from": "after-service",
+                  "to": "changed-behavior",
+                  "verb": "차이 감지",
+                  "payload": "return value 또는 exception type mismatch",
+                  "kind": "failure",
+                  "check": "HTTP status나 response body 검증으로 확대하지 않습니다."
+                }
+              ]
+            }
+          ],
+          "notReached": [
+            {
+              "label": "Service behavior preserved",
+              "reason": "After 단위 테스트가 실패해 invariant를 확정할 수 없습니다."
+            }
+          ]
+        },
+        "snapshot": [
+          {
+            "label": "Invariant",
+            "value": "Service 단위 동작 변경 감지",
+            "tone": "blocked"
+          },
+          {
+            "label": "After tests",
+            "value": "실패",
+            "tone": "blocked"
+          }
+        ],
+        "evidence": "리팩토링 후 테스트 실패는 같은 입력에서 기존 assertion의 반환값과 예외 타입이 유지되는지 확인하게 합니다. collaborator 호출은 테스트가 명시적으로 검증한 경우에만 불변 조건입니다.",
+        "outcome": "구조 개선과 기능 변경을 섞지 않고 마지막 책임 변경을 되짚습니다.",
+        "stopAfter": 2
+      },
+      {
+        "id": "refactor-package-expansion",
+        "label": "helper·package 이동 동시 변경",
+        "flowId": "service-split",
+        "tone": "warning",
+        "prompt": "작은 helper 분리와 feature-based package 이동을 한 변경에 함께 넣으려 합니다. 현재 테스트로 닫을 수 있는 범위를 예측합니다.",
+        "prediction": {
+          "prompt": "현재 테스트 안전망에서 가장 작은 검증 가능한 변경은 무엇일까요?",
+          "options": [
+            { "id": "helper", "label": "Service 안의 작은 helper 책임 분리" },
+            { "id": "package", "label": "feature package 전체 이동" },
+            { "id": "contract", "label": "API 계약과 구조를 동시에 변경" }
+          ],
+          "answer": "helper",
+          "explanation": "패키지 이동은 후속 선택지입니다. 현재 범위에서는 같은 Service 단위 테스트로 확인 가능한 작은 책임 분리가 안전합니다."
+        },
+        "route": [
+          "혼합된 Service 책임",
+          "작은 helper 분리",
+          "Feature-based package 이동",
+          "회귀 테스트"
+        ],
+        "diagram": {
+          "caption": "이번 반복은 작은 helper 분리와 같은 Service 단위 테스트까지이며 feature-based package 이동은 안전망 이후의 별도 선택지입니다.",
+          "lanes": [
+            {
+              "id": "current-refactor-scope",
+              "label": "Current verified scope",
+              "description": "검증 가능한 한 번의 구조 변경만 적용하고 같은 테스트로 닫습니다.",
+              "steps": [
+                {
+                  "from": "before-service",
+                  "to": "responsibility-review",
+                  "verb": "현재 후보 식별",
+                  "payload": "mixed Service responsibility",
+                  "kind": "compare"
+                },
+                {
+                  "from": "responsibility-review",
+                  "to": "helper-extraction",
+                  "verb": "작은 범위 선택",
+                  "payload": "helper extraction only",
+                  "kind": "transform"
+                },
+                {
+                  "from": "helper-extraction",
+                  "to": "after-service",
+                  "verb": "책임 분리",
+                  "payload": "Service + named helpers",
+                  "kind": "transform"
+                },
+                {
+                  "from": "after-tests",
+                  "to": "after-service",
+                  "verb": "회귀 확인",
+                  "payload": "same Service unit tests",
+                  "kind": "compare"
+                },
+                {
+                  "from": "after-service",
+                  "to": "invariant-evidence",
+                  "verb": "현재 범위 종료",
+                  "payload": "unit behavior preserved",
+                  "kind": "response"
+                }
+              ]
+            }
+          ],
+          "notReached": [
+            {
+              "label": "Feature-based package move",
+              "reason": "더 큰 구조 변경은 테스트 안전망을 확인한 뒤 별도 반복으로 검토합니다."
+            }
+          ]
+        },
+        "snapshot": [
+          {
+            "label": "현재 범위",
+            "value": "작은 책임 분리까지",
+            "tone": "warning"
+          },
+          {
+            "label": "Package 이동",
+            "value": "후속 선택지",
+            "tone": "warning"
+          }
+        ],
+        "evidence": "feature-based package 이동은 테스트 안전망을 만든 뒤 검토할 후속 선택지이며 이번 직접 범위가 아닙니다.",
+        "outcome": "패키지 개편을 섞지 않고 현재 테스트로 확인 가능한 책임 분리에 집중합니다.",
+        "stopAfter": 1
+      }
+    ]
+  },
   "repo": {
     "name": "spring-boot-refactoring-foundation-lab",
     "path": "spring-boot-refactoring-foundation-lab"
