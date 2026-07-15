@@ -5,6 +5,123 @@ window.visualLabData = {
   "subtitle": "Refactoring and foundation reinforcement",
   "goal": "테스트로 동작을 고정하고, Service 책임 분리와 검증/예외 응답 보강을 작은 단위로 진행합니다.",
   "problem": "기능이 늘어난 Service는 입력 정리, 검증, 저장소 호출, 응답 변환, 예외 처리가 한 메서드에 섞이기 쉽습니다.",
+  "workbench": {
+    "kind": "refactor",
+    "title": "Behavior Invariant Map",
+    "instruction": "변경 범위를 선택해 Before와 After 사이에서 Service 동작을 지키는 단위 테스트 증거를 확인하세요.",
+    "scenarios": [
+      {
+        "id": "refactor-baseline",
+        "label": "Before 동작 고정",
+        "flowId": "before-after-test",
+        "tone": "signal",
+        "prompt": "구조를 바꾸기 전에 현재 Service 동작을 단위 테스트로 고정합니다.",
+        "route": [
+          "현재 Service 동작",
+          "./gradlew test",
+          "Baseline result"
+        ],
+        "snapshot": [
+          {
+            "label": "Before",
+            "value": "현재 테스트 통과",
+            "tone": "signal"
+          },
+          {
+            "label": "비교 기준",
+            "value": "입력 · Repository 호출 · 반환값",
+            "tone": "signal"
+          }
+        ],
+        "evidence": "PostServiceTest와 AuthServiceTest가 리팩토링 전 Service 단위 동작의 기준을 제공합니다.",
+        "outcome": "통과한 baseline이 있어야 After 실패가 구조 변경에서 생겼는지 비교할 수 있습니다."
+      },
+      {
+        "id": "refactor-small-split",
+        "label": "작은 책임 분리",
+        "flowId": "service-split",
+        "tone": "recovered",
+        "prompt": "입력 정리, 조회, 검증, 변환 책임을 작은 helper로 나누고 같은 테스트를 다시 실행합니다.",
+        "route": [
+          "Baseline tests",
+          "PostService · AuthService",
+          "작은 helper 추출",
+          "같은 테스트 재실행",
+          "입력 · 저장 호출 · 반환값 유지"
+        ],
+        "snapshot": [
+          {
+            "label": "After",
+            "value": "책임 분리 후 동작 보존",
+            "tone": "recovered"
+          },
+          {
+            "label": "회귀 테스트",
+            "value": "같은 명령 통과",
+            "tone": "recovered"
+          }
+        ],
+        "evidence": "helper 추출 뒤에도 리팩토링 전과 같은 Service 단위 테스트 명령이 통과합니다.",
+        "outcome": "검증된 Service 동작을 바꾸지 않고 변경 이유를 작은 책임으로 구분합니다."
+      },
+      {
+        "id": "refactor-contract-changed",
+        "label": "Service 동작 변경 감지",
+        "flowId": "before-after-test",
+        "tone": "blocked",
+        "prompt": "helper 추출 중 반환값이나 예외 타입이 달라졌을 때 단위 테스트가 어디서 멈추는지 확인합니다.",
+        "route": [
+          "Baseline tests",
+          "Service 검증 분리",
+          "After unit tests",
+          "Service input · interaction · result invariant"
+        ],
+        "snapshot": [
+          {
+            "label": "Invariant",
+            "value": "Service 단위 동작 변경 감지",
+            "tone": "blocked"
+          },
+          {
+            "label": "After tests",
+            "value": "실패",
+            "tone": "blocked"
+          }
+        ],
+        "evidence": "리팩토링 후 테스트 실패는 입력, Repository 상호작용, 반환값과 예외 타입이 유지되는지 확인하게 합니다.",
+        "outcome": "구조 개선과 기능 변경을 섞지 않고 마지막 책임 변경을 되짚습니다.",
+        "stopAfter": 2
+      },
+      {
+        "id": "refactor-package-expansion",
+        "label": "범위가 커진 변경",
+        "flowId": "service-split",
+        "tone": "warning",
+        "prompt": "작은 helper 분리와 feature-based package 이동을 한 번에 섞으려는 경우 범위를 비교합니다.",
+        "route": [
+          "혼합된 Service 책임",
+          "작은 helper 분리",
+          "Feature-based package 이동",
+          "회귀 테스트"
+        ],
+        "snapshot": [
+          {
+            "label": "현재 범위",
+            "value": "작은 책임 분리까지",
+            "tone": "warning"
+          },
+          {
+            "label": "Package 이동",
+            "value": "후속 선택지",
+            "tone": "warning"
+          }
+        ],
+        "evidence": "feature-based package 이동은 테스트 안전망을 만든 뒤 검토할 후속 선택지이며 이번 직접 범위가 아닙니다.",
+        "outcome": "패키지 개편을 섞지 않고 현재 테스트로 확인 가능한 책임 분리에 집중합니다.",
+        "stopAfter": 1
+      }
+    ]
+  },
   "repo": {
     "name": "spring-boot-refactoring-foundation-lab",
     "path": "spring-boot-refactoring-foundation-lab"
