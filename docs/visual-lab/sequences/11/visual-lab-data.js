@@ -37,6 +37,7 @@ window.visualLabData = {
         "icon": "person",
         "kind": "actor",
         "role": "작은 변경과 재검증을 반복",
+        "systemLayer": "outside",
         "boundary": "Refactoring loop"
       },
       "service-input": {
@@ -44,6 +45,7 @@ window.visualLabData = {
         "icon": "fixture",
         "kind": "test fixture",
         "role": "동일하게 유지할 입력과 mock 조건",
+        "systemLayer": "outside",
         "boundary": "Unit test"
       },
       "baseline-tests": {
@@ -51,6 +53,7 @@ window.visualLabData = {
         "icon": "test",
         "kind": "unit tests",
         "role": "현재 Service 동작의 비교 기준",
+        "systemLayer": "outside",
         "boundary": "Before evidence",
         "codePointIds": [
           "regression-test"
@@ -61,6 +64,7 @@ window.visualLabData = {
         "icon": "service",
         "kind": "code under test",
         "role": "책임이 섞여 있는 현재 Service 구현",
+        "systemLayer": "application",
         "boundary": "Before",
         "codePointIds": [
           "service-responsibility"
@@ -71,6 +75,7 @@ window.visualLabData = {
         "icon": "evidence",
         "kind": "unit behavior evidence",
         "role": "반환값과 예외 타입의 현재 기준",
+        "systemLayer": "outside",
         "boundary": "Before evidence"
       },
       "responsibility-review": {
@@ -78,6 +83,7 @@ window.visualLabData = {
         "icon": "refactor",
         "kind": "code review",
         "role": "입력 정리, 조회, 검증, 변환 혼합 지점 식별",
+        "systemLayer": "outside",
         "boundary": "Structural change"
       },
       "helper-extraction": {
@@ -85,6 +91,7 @@ window.visualLabData = {
         "icon": "refactor",
         "kind": "refactoring operation",
         "role": "한 번에 하나의 책임을 이름 있는 단위로 분리",
+        "systemLayer": "application",
         "boundary": "Structural change",
         "codePointIds": [
           "service-responsibility"
@@ -95,6 +102,7 @@ window.visualLabData = {
         "icon": "test",
         "kind": "unit tests",
         "role": "동일한 입력과 조건으로 After 재검증",
+        "systemLayer": "outside",
         "boundary": "After evidence",
         "codePointIds": [
           "regression-test"
@@ -105,6 +113,7 @@ window.visualLabData = {
         "icon": "service",
         "kind": "refactored code",
         "role": "구조 재배치와 명시한 동작 보강을 함께 담은 목표 코드",
+        "systemLayer": "application",
         "boundary": "After",
         "codePointIds": [
           "service-responsibility",
@@ -116,6 +125,7 @@ window.visualLabData = {
         "icon": "repository",
         "kind": "test collaborator",
         "role": "테스트가 준비한 조회 또는 저장 결과",
+        "systemLayer": "resource",
         "boundary": "Unit test"
       },
       "invariant-evidence": {
@@ -123,6 +133,7 @@ window.visualLabData = {
         "icon": "evidence",
         "kind": "invariant result",
         "role": "유지하기로 한 기존 assertion subset의 단위 테스트 결과",
+        "systemLayer": "outside",
         "boundary": "Invariant"
       },
       "behavior-reinforcement": {
@@ -130,6 +141,7 @@ window.visualLabData = {
         "icon": "refactor",
         "kind": "intentional behavior change",
         "role": "trim·blank·UserNotFound 계약 변경과 명시적 update save 코드 확인",
+        "systemLayer": "application",
         "boundary": "동작 보강"
       },
       "new-contract-tests": {
@@ -137,6 +149,7 @@ window.visualLabData = {
         "icon": "test",
         "kind": "new behavior evidence",
         "role": "trim된 반환값, blank 검증, UserNotFound 예외 기대값 검증",
+        "systemLayer": "outside",
         "boundary": "동작 보강 증거"
       },
       "changed-behavior": {
@@ -144,6 +157,7 @@ window.visualLabData = {
         "icon": "evidence",
         "kind": "failure evidence",
         "role": "반환값 또는 예외 타입 차이를 알리는 테스트 실패",
+        "systemLayer": "outside",
         "boundary": "Invariant"
       },
       "package-move": {
@@ -151,6 +165,7 @@ window.visualLabData = {
         "icon": "refactor",
         "kind": "later scope",
         "role": "안전망 이후 검토할 더 큰 구조 변경",
+        "systemLayer": "application",
         "boundary": "Later scope"
       }
     },

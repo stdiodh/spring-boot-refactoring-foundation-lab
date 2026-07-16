@@ -1,47 +1,92 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 500" role="img" aria-labelledby="title desc">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 720 560" role="img" aria-labelledby="title desc">
   <title id="title">Service 변경을 구조 리팩터링과 동작 보강으로 분리</title>
-  <desc id="desc">왼쪽 구조 리팩터링 lane은 기존 Service assertion subset을 유지하며 response 변환 책임을 재배치합니다. 오른쪽 동작 보강 lane은 trim, validation, UserNotFound를 새 테스트로 확인하고 explicit update save는 코드에서 따로 확인합니다.</desc>
+  <desc id="desc">구조 리팩터링 lane은 시스템 밖 기존 test와 assertion 사이에서 서비스·정책 response helper 위치만 옮기고, 동작 보강 lane은 새 test가 서비스·정책 validation과 상태·데이터 Repository save를 확인해 두 변경 종류의 증거를 분리하는 지도</desc>
   <metadata>Source: A&amp;I Sequence 11 theory, implementation, checklist, PostServiceTest, AuthServiceTest. License: repository policy; no standalone license grant.</metadata>
   <defs>
-    <marker id="arrow-blue" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
-      <path d="M0 0 10 5 0 10Z" fill="#2955e4"/>
-    </marker>
-    <marker id="arrow-teal" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto">
-      <path d="M0 0 10 5 0 10Z" fill="#087f78"/>
-    </marker>
+    <marker id="arrow" markerUnits="userSpaceOnUse" markerWidth="10" markerHeight="10" refX="9" refY="5" orient="auto"><path d="M0 0 10 5 0 10Z" fill="#2955E4"/></marker>
+    <style>
+      text{font-family:system-ui,-apple-system,BlinkMacSystemFont,sans-serif;fill:#111B3F}
+      .lane{fill:#FFFFFF;stroke:#94A3B8;stroke-width:2.5}
+      .node{stroke-width:2.5}
+      .layer-outside{fill:#F1F5F9;stroke:#5B677A}
+      .layer-interface{fill:#E6F4F7;stroke:#0E7490}
+      .layer-application{fill:#F2EDFF;stroke:#6D43A8}
+      .layer-resource{fill:#EAF5EE;stroke:#2C7352}
+      .layer-integration{fill:#FFF4D6;stroke:#926000}
+      .layer-runtime{fill:#EEF2F7;stroke:#52627A}
+      [data-layer="outside"] .layer{fill:#5B677A}
+      [data-layer="resource"] .layer{fill:#2C7352}
+      .flow{fill:none;stroke:#2955E4;stroke-width:3;marker-end:url(#arrow)}
+      .pass{fill:#EAF7F1;stroke:#176F72;stroke-width:2.5}
+      .title{font-size:29px;font-weight:850}
+      .lane-name{font-size:24px;font-weight:900;fill:#0C2691}
+      .lane-desc{font-size:24px;font-weight:650;fill:#4B587C}
+      .layer{font-size:24px;font-weight:850;fill:#4B587C;text-anchor:middle}
+      .name{font-size:24px;font-weight:850;text-anchor:middle}
+      .body{font-size:24px;font-weight:650;fill:#4B587C;text-anchor:middle}
+      .pass-name{font-size:24px;font-weight:900;fill:#176F72;text-anchor:middle}
+      .complete{font-size:24px;font-weight:850;fill:#FFFFFF;text-anchor:middle}
+    </style>
   </defs>
-  <rect width="720" height="500" rx="22" fill="#f1f7ff"/>
-  <text x="24" y="45" fill="#111b3f" font-family="system-ui, sans-serif" font-size="29" font-weight="850">TWO CHANGE LANES</text>
-  <text x="696" y="43" text-anchor="end" fill="#6473a0" font-family="ui-monospace, monospace" font-size="24" font-weight="700">SEQ 11</text>
+  <rect width="720" height="560" rx="22" fill="#F8F9FB"/>
+  <text x="22" y="43" class="title">구조 변경과 동작 변경을 따로 검증</text>
 
-  <rect x="20" y="72" width="330" height="314" rx="16" fill="#ffffff" stroke="#2955e4" stroke-width="3"/>
-  <text x="42" y="108" fill="#0c2691" font-family="system-ui, sans-serif" font-size="24" font-weight="900">구조 리팩터링 lane</text>
-  <text x="42" y="137" fill="#6473a0" font-family="system-ui, sans-serif" font-size="24">기존 assertion subset</text>
-  <rect x="42" y="158" width="286" height="54" rx="11" fill="#eaf0fb" stroke="#6473a0" stroke-width="2"/>
-  <text x="185" y="181" text-anchor="middle" fill="#111b3f" font-family="system-ui, sans-serif" font-size="24" font-weight="800">BEFORE RESULT</text>
-  <text x="185" y="205" text-anchor="middle" fill="#6473a0" font-family="system-ui, sans-serif" font-size="24">create · login</text>
-  <path d="M185 213V241" stroke="#2955e4" stroke-width="3" marker-end="url(#arrow-blue)"/>
-  <rect x="42" y="248" width="286" height="54" rx="11" fill="#ecfbfa" stroke="#6473a0" stroke-width="2"/>
-  <text x="185" y="281" text-anchor="middle" fill="#0c2691" font-family="system-ui, sans-serif" font-size="24" font-weight="800">response helper 재배치</text>
-  <path d="M185 303V331" stroke="#2955e4" stroke-width="3" marker-end="url(#arrow-blue)"/>
-  <rect x="42" y="338" width="286" height="30" rx="9" fill="#0c2691"/>
-  <text x="185" y="361" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="24" font-weight="800">기존 subset PASS</text>
+  <g data-semantic="lane">
+    <rect x="18" y="68" width="333" height="410" rx="16" class="lane"/>
+    <text x="38" y="102" class="lane-name">구조 리팩터링</text>
+    <text x="38" y="128" class="lane-desc">create·login 결과 유지</text>
+  </g>
+  <g data-layer="outside">
+    <rect x="40" y="148" width="289" height="76" rx="11" class="node layer-outside"/>
+    <text x="184.5" y="172" class="layer">시스템 밖</text>
+    <text x="184.5" y="202" class="name">기존 test</text>
+  </g>
+  <path d="M184.5 224v20" class="flow"/>
+  <g data-layer="application">
+    <rect x="40" y="250" width="289" height="82" rx="11" class="node layer-application"/>
+    <text x="184.5" y="274" class="layer">서비스·정책</text>
+    <text x="184.5" y="304" class="name">response helper 재배치</text>
+  </g>
+  <path d="M184.5 332v20" class="flow"/>
+  <g data-layer="outside">
+    <rect x="40" y="358" width="289" height="62" rx="11" class="node layer-outside"/>
+    <text x="184.5" y="382" class="layer">시스템 밖</text>
+    <text x="184.5" y="410" class="name">기존 assertion</text>
+  </g>
+  <g data-semantic="state">
+    <rect x="40" y="432" width="289" height="32" rx="9" class="pass"/>
+    <text x="184.5" y="454" class="pass-name">✓ 기존 검사 통과</text>
+  </g>
 
-  <rect x="370" y="72" width="330" height="314" rx="16" fill="#ffffff" stroke="#087f78" stroke-width="3"/>
-  <text x="392" y="108" fill="#075e59" font-family="system-ui, sans-serif" font-size="24" font-weight="900">동작 보강 lane</text>
-  <text x="392" y="137" fill="#6473a0" font-family="system-ui, sans-serif" font-size="24">test + code evidence</text>
-  <rect x="392" y="158" width="286" height="54" rx="11" fill="#ecfbfa" stroke="#6473a0" stroke-width="2"/>
-  <text x="535" y="181" text-anchor="middle" fill="#111b3f" font-family="system-ui, sans-serif" font-size="24" font-weight="800">NEW CASES</text>
-  <text x="535" y="205" text-anchor="middle" fill="#6473a0" font-family="system-ui, sans-serif" font-size="24">trim · blank · missing</text>
-  <path d="M535 213V241" stroke="#087f78" stroke-width="3" marker-end="url(#arrow-teal)"/>
-  <rect x="392" y="248" width="286" height="54" rx="11" fill="#eaf0fb" stroke="#6473a0" stroke-width="2"/>
-  <text x="535" y="272" text-anchor="middle" fill="#075e59" font-family="system-ui, sans-serif" font-size="24" font-weight="800">TEST · 값과 예외</text>
-  <text x="535" y="297" text-anchor="middle" fill="#075e59" font-family="system-ui, sans-serif" font-size="24" font-weight="800">CODE · update save</text>
-  <path d="M535 303V331" stroke="#087f78" stroke-width="3" marker-end="url(#arrow-teal)"/>
-  <rect x="392" y="338" width="286" height="30" rx="9" fill="#087f78"/>
-  <text x="535" y="361" text-anchor="middle" fill="#ffffff" font-family="system-ui, sans-serif" font-size="24" font-weight="800">TEST PASS + CODE 확인</text>
+  <g data-semantic="lane">
+    <rect x="369" y="68" width="333" height="410" rx="16" class="lane"/>
+    <text x="389" y="102" class="lane-name">동작 보강</text>
+    <text x="389" y="128" class="lane-desc">trim·blank·missing 추가</text>
+  </g>
+  <g data-layer="outside">
+    <rect x="391" y="148" width="289" height="76" rx="11" class="node layer-outside"/>
+    <text x="535.5" y="172" class="layer">시스템 밖</text>
+    <text x="535.5" y="202" class="name">새 test cases</text>
+  </g>
+  <path d="M535.5 224v16" class="flow"/>
+  <g data-layer="application">
+    <rect x="391" y="246" width="289" height="76" rx="11" class="node layer-application"/>
+    <text x="535.5" y="270" class="layer">서비스·정책</text>
+    <text x="535.5" y="300" class="name">값 정리·검증·예외</text>
+  </g>
+  <path d="M535.5 322v16" class="flow"/>
+  <g data-layer="resource">
+    <rect x="391" y="344" width="289" height="76" rx="11" class="node layer-resource"/>
+    <text x="535.5" y="368" class="layer">상태·데이터</text>
+    <text x="535.5" y="398" class="name">Repository save</text>
+  </g>
+  <g data-semantic="state">
+    <rect x="391" y="432" width="289" height="32" rx="9" class="pass"/>
+    <text x="535.5" y="454" class="pass-name">✓ 새 증거 확인</text>
+  </g>
 
-  <rect x="20" y="407" width="680" height="70" rx="14" fill="#111b3f"/>
-  <text x="42" y="437" fill="#ffffff" font-family="system-ui, sans-serif" font-size="24" font-weight="900">완료 판정</text>
-  <text x="42" y="466" fill="#d9e5ff" font-family="system-ui, sans-serif" font-size="24">기존 subset PASS + 새 test PASS + code 확인</text>
+  <g data-semantic="evidence">
+    <rect x="18" y="502" width="684" height="42" rx="13" fill="#111B3F"/>
+    <text x="360" y="530" class="complete">완료 · 기존 검사 + 새 test + code 확인</text>
+  </g>
 </svg>
