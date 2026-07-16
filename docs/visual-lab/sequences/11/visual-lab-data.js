@@ -12,7 +12,7 @@ window.visualLabData = {
     "visual": {
       "src": "../../assets/diagrams/11-behavior-invariant.svg",
       "alt": "왼쪽은 기존 Service 반환값과 예외 assertion을 유지하며 helper를 분리하는 구조 리팩터링 lane이고, 오른쪽은 trim, validation, UserNotFound를 새 테스트로 확인하고 update 저장 호출은 코드에서 따로 확인하는 동작 보강 lane",
-      "caption": "기존 테스트 subset은 유지하고, 새 값·예외 expectation과 명시적 저장 호출의 코드 증거를 분리합니다."
+      "caption": "기존 테스트가 지키는 결과와 새 테스트가 확인할 값·예외, 코드로 볼 저장 호출을 나눕니다."
     },
     "terms": [
       { "term": "baseline", "meaning": "구조 변경 전에 테스트로 고정한 현재 동작 기준" },
@@ -175,12 +175,12 @@ window.visualLabData = {
         "label": "리팩터링 시작 전",
         "flowId": "before-after-test",
         "tone": "signal",
-        "prompt": "Service 구조를 아직 바꾸지 않았습니다. 같은 입력으로 After와 비교할 기준을 무엇으로 남길지 예측합니다.",
-        "observationTitle": "구조 변경 전에 기존 테스트가 단언한 Service 동작 subset을 고정하는 경로",
+        "prompt": "Service 구조는 아직 변경 전이며 기존 테스트가 통과한 상태입니다.",
+        "observationTitle": "기존 Service 테스트의 기준 결과",
         "theoryRef": "../../../theory.md#seq-11",
         "reflection": {
-          "prompt": "Before baseline이 실제로 보호하는 Service assertion subset을 적어보세요.",
-          "hint": "create 기본 입력, 없는 post, login 성공·실패를 기준으로 삼고 모든 입력이나 HTTP 계약까지 과장하지 마세요."
+          "prompt": "Before 테스트가 직접 확인한 Service 결과를 적어보세요.",
+          "hint": "create 기본 입력, 없는 post, login 성공·실패까지만 포함하고 HTTP 계약까지 넓히지 마세요."
         },
         "prediction": {
           "prompt": "helper를 추출하기 전에 먼저 기록할 기준은 무엇일까요?",
@@ -190,7 +190,7 @@ window.visualLabData = {
             { "id": "package", "label": "새 패키지 위치" }
           ],
           "answer": "baseline",
-          "explanation": "통과한 Before 기준이 있어야 After 실패가 구조 변경에서 생겼는지 비교할 수 있습니다."
+          "explanation": "새 기대값이 아니라 현재 테스트가 확인한 반환값과 예외를 비교 기준으로 남깁니다."
         },
         "route": [
           "현재 Service 동작",
@@ -198,12 +198,12 @@ window.visualLabData = {
           "Baseline result"
         ],
         "diagram": {
-          "caption": "이 baseline은 HTTP 계약이나 모든 입력이 아니라 기존 PostServiceTest와 AuthServiceTest가 실제로 단언한 Service 반환값·예외 subset을 고정합니다.",
+          "caption": "PostServiceTest와 AuthServiceTest를 실행해 현재 반환값과 예외를 Before 기준으로 기록합니다.",
           "lanes": [
             {
               "id": "before-baseline",
               "label": "Before · Service 동작 기준",
-              "description": "구조 변경 전에 같은 입력과 collaborator 조건으로 현재 동작을 기록합니다.",
+              "description": "같은 입력과 mock 조건으로 변경 전 Service 결과를 기록합니다.",
               "steps": [
                 {
                   "from": "developer",
@@ -267,30 +267,30 @@ window.visualLabData = {
             "tone": "signal"
           }
         ],
-        "evidence": "기존 PostServiceTest와 AuthServiceTest는 create 기본 입력, 없는 post, login 성공·잘못된 password의 Service 결과만 baseline으로 제공합니다.",
-        "outcome": "통과한 baseline이 있어야 After 실패가 구조 변경에서 생겼는지 비교할 수 있습니다."
+        "evidence": "기준 테스트는 create 기본 입력, 없는 post, login 성공, 잘못된 password의 Service 결과까지만 확인합니다.",
+        "outcome": "구조 변경 전 통과 결과가 있어야 이후 불일치를 회귀 후보로 좁힐 수 있습니다."
       },
       {
         "id": "refactor-small-split",
         "label": "구조 분리 + 동작 보강",
         "flowId": "service-split",
         "tone": "recovered",
-        "prompt": "response 변환 helper 재배치와 정규화·검증·예외 보강을 함께 검토합니다. 어떤 결과를 유지하고 어떤 결과를 새로 정의할지 예측합니다.",
-        "observationTitle": "기존 assertion 보존과 의도한 새 기대값을 두 lane으로 검증하는 경로",
+        "prompt": "response helper 재배치와 trim·validation·예외 보강을 함께 검토합니다.",
+        "observationTitle": "유지할 결과와 새 기대값 분리",
         "theoryRef": "../../../theory.md#seq-11",
         "reflection": {
-          "prompt": "구조 lane에서 유지할 subset과 동작 보강 lane에서 달라질 기대값을 각각 적어보세요.",
-          "hint": "기존 create·getById·login assertion과 새 trim·validation·UserNotFound assertion을 분리하세요."
+          "prompt": "구조 변경에서 유지할 결과와 동작 보강에서 달라질 값을 각각 적어보세요.",
+          "hint": "기존 create·getById·login 테스트와 새 trim·validation·UserNotFound 테스트를 나누세요."
         },
         "prediction": {
-          "prompt": "이번 목표를 정확히 설명한 선택은 무엇일까요?",
+          "prompt": "어떤 변경에 기존 테스트를 다시 적용해야 할까요?",
           "options": [
-            { "id": "behavior", "label": "기존 subset은 유지하고 새 계약은 명시" },
+            { "id": "behavior", "label": "helper는 기존 테스트, 새 계약은 새 테스트" },
             { "id": "helpers", "label": "private helper 개수" },
             { "id": "package", "label": "파일 위치" }
           ],
           "answer": "behavior",
-          "explanation": "구조 재배치에는 기존 assertion을 적용합니다. trim·validation·UserNotFound는 새 expectation으로, 명시적 update save는 코드로 따로 확인합니다."
+          "explanation": "helper 재배치는 기존 테스트로, 의도한 값·예외 변경은 새 테스트로 확인합니다."
         },
         "route": [
           "Baseline tests",
@@ -300,12 +300,12 @@ window.visualLabData = {
           "새 계약 테스트 추가"
         ],
         "diagram": {
-          "caption": "왼쪽은 기존 Service assertion subset을 유지하는 구조 lane입니다. 오른쪽은 새 테스트가 확인하는 값·예외와 코드에서 확인할 update save를 구분합니다.",
+          "caption": "helper 재배치 뒤 기존 Service 테스트를 다시 실행하고, 새 값·예외는 새 테스트로, update save는 코드로 확인합니다.",
           "lanes": [
             {
               "id": "before-lane",
               "label": "Before · 동일 입력",
-              "description": "현재 Service 단위 동작을 변경 전 기준으로 남깁니다.",
+              "description": "변경 전 Service 결과를 기준으로 남깁니다.",
               "steps": [
                 {
                   "from": "baseline-tests",
@@ -354,7 +354,7 @@ window.visualLabData = {
             {
               "id": "structural-change-lane",
               "label": "내부 책임 분리",
-              "description": "런타임 요청 이동이 아니라 코드 책임의 위치가 바뀌는 과정입니다.",
+              "description": "runtime 이동이 아니라 helper로 책임 위치만 바꿉니다.",
               "steps": [
                 {
                   "from": "before-service",
@@ -406,7 +406,7 @@ window.visualLabData = {
             {
               "id": "after-invariant-lane",
               "label": "구조 lane · 기존 subset 보존",
-              "description": "동작을 바꾸지 않는 helper 재배치에 기존 Service assertion subset을 적용합니다.",
+              "description": "구조 변경 뒤 기존 Service 테스트를 그대로 재실행합니다.",
               "steps": [
                 {
                   "from": "repository-collaborator",
@@ -459,7 +459,7 @@ window.visualLabData = {
             {
               "id": "behavior-reinforcement-lane",
               "label": "동작 보강 lane · test와 code 증거",
-              "description": "Before와 달라지는 값·예외 expectation은 단위 테스트로, 명시적 update save는 목표 코드로 확인합니다.",
+              "description": "새 값·예외는 테스트로, update save는 코드로 확인합니다.",
               "steps": [
                 {
                   "from": "responsibility-review",
@@ -528,30 +528,30 @@ window.visualLabData = {
             "tone": "signal"
           }
         ],
-        "evidence": "구조 lane은 기존 Service assertion subset을 재실행합니다. 새 단위 테스트는 trim된 반환값·validation·UserNotFound를 확인하며, 명시적 update save는 테스트가 아니라 목표 코드에서 확인합니다.",
+        "evidence": "새 단위 테스트는 trim·validation·UserNotFound를 확인합니다. update save는 목표 코드에서 따로 봅니다.",
         "outcome": "유지한 Service 결과와 의도적으로 달라진 Service 결과를 같은 ‘동작 보존’ 문장으로 합치지 않습니다."
       },
       {
         "id": "refactor-contract-changed",
-        "label": "유지 subset의 예상 밖 불일치",
+        "label": "유지 결과의 예상 밖 불일치",
         "flowId": "before-after-test",
         "tone": "blocked",
-        "prompt": "동작을 바꾸지 않기로 한 구조 lane에서 기존 Service 반환값 또는 예외 assertion이 달라졌습니다. 첫 조사 범위를 예측합니다.",
-        "observationTitle": "유지 대상으로 정한 assertion 차이만 회귀로 좁히는 경로",
+        "prompt": "구조 lane에서 기존 Service 반환값 또는 예외가 달라졌습니다.",
+        "observationTitle": "유지하기로 한 결과의 회귀 범위",
         "theoryRef": "../../../theory.md#seq-11",
         "reflection": {
           "prompt": "같은 테스트가 달라졌을 때 가장 먼저 되짚을 범위를 적어보세요.",
-          "hint": "새 계약 테스트가 아니라 유지하기로 한 기존 assertion인지 먼저 확인하세요."
+          "hint": "새 계약 테스트가 아니라 유지하기로 한 기존 테스트인지 먼저 확인하세요."
         },
         "prediction": {
-          "prompt": "유지하기로 한 기존 테스트에서 반환값이나 예외가 달라졌다면 무엇을 의심해야 할까요?",
+          "prompt": "첫 조사 지점은 어디일까요?",
           "options": [
             { "id": "refactor", "label": "정상적인 구조 개선 결과" },
             { "id": "behavior", "label": "구조 변경에 섞인 기능 동작 변경" },
             { "id": "coverage", "label": "테스트가 너무 많이 통과한 상태" }
           ],
           "answer": "behavior",
-          "explanation": "구조 lane은 기존 assertion subset을 보존해야 합니다. 의도한 새 계약과 구분한 뒤 마지막 책임 재배치에서 차이를 좁힙니다."
+          "explanation": "의도한 새 계약이 아니라 마지막 helper 재배치와 mock에 넘긴 인자를 먼저 봅니다."
         },
         "route": [
           "Baseline tests",
@@ -560,12 +560,12 @@ window.visualLabData = {
           "Same input · asserted result invariant"
         ],
         "diagram": {
-          "caption": "이 경로는 HTTP 계약이나 의도한 새 기대값이 아니라 유지 대상으로 정한 기존 Service 반환값·예외 assertion의 실패만 다룹니다.",
+          "caption": "Before와 After에 같은 Service 테스트를 실행해 구조 변경에서 생긴 불일치만 좁힙니다.",
           "lanes": [
             {
               "id": "expected-before",
               "label": "Before 기대 결과",
-              "description": "변경 전 통과 결과를 비교 기준으로 유지합니다.",
+              "description": "변경 전 통과 결과를 기준으로 유지합니다.",
               "steps": [
                 {
                   "from": "baseline-tests",
@@ -600,7 +600,7 @@ window.visualLabData = {
             {
               "id": "changed-after",
               "label": "After 결과 불일치",
-              "description": "마지막 구조 변경에서 의도하지 않은 동작 변화가 생겼는지 좁힙니다.",
+              "description": "마지막 helper 변경에서 차이를 좁힙니다.",
               "steps": [
                 {
                   "from": "after-tests",
@@ -653,8 +653,8 @@ window.visualLabData = {
             "tone": "blocked"
           }
         ],
-        "evidence": "구조 재배치 후 실패한 기존 assertion만 회귀 후보입니다. 새 trim·validation·UserNotFound expectation은 Before와 달라도 의도한 보강입니다.",
-        "outcome": "구조 개선과 기능 변경을 섞지 않고 마지막 책임 변경을 되짚습니다.",
+        "evidence": "trim·validation·UserNotFound 테스트는 의도한 보강이므로 기존 결과의 회귀와 분리합니다.",
+        "outcome": "유지하기로 한 기존 결과의 차이만 구조 회귀로 판단합니다.",
         "stopAfter": 2
       },
       {
@@ -662,22 +662,22 @@ window.visualLabData = {
         "label": "helper·package 이동 동시 변경",
         "flowId": "service-split",
         "tone": "warning",
-        "prompt": "작은 helper 분리와 feature-based package 이동을 한 변경에 함께 넣으려 합니다. 현재 테스트로 닫을 수 있는 범위를 예측합니다.",
-        "observationTitle": "현재 테스트로 닫을 수 있는 가장 작은 책임 분리 경로",
+        "prompt": "작은 helper 분리와 feature-based package 이동을 한 변경에 함께 넣으려 합니다.",
+        "observationTitle": "테스트로 닫을 최소 변경",
         "theoryRef": "../../../theory.md#seq-11",
         "reflection": {
           "prompt": "helper 추출과 package 이동을 분리해야 하는 이유를 적어보세요.",
           "hint": "현재 테스트가 확인 가능한 작은 변경을 먼저 완료하세요."
         },
         "prediction": {
-          "prompt": "현재 테스트 안전망에서 가장 작은 검증 가능한 변경은 무엇일까요?",
+          "prompt": "현재 Service 테스트로 바로 검증할 수 있는 범위는 무엇일까요?",
           "options": [
             { "id": "helper", "label": "Service 안의 작은 helper 책임 분리" },
             { "id": "package", "label": "feature package 전체 이동" },
             { "id": "contract", "label": "API 계약과 구조를 동시에 변경" }
           ],
           "answer": "helper",
-          "explanation": "패키지 이동은 후속 선택지입니다. 현재 범위에서는 같은 Service 단위 테스트로 확인 가능한 작은 책임 분리가 안전합니다."
+          "explanation": "패키지 이동까지 묶는 선택보다 같은 Service 안의 helper 분리가 현재 안전망에 맞습니다."
         },
         "route": [
           "혼합된 Service 책임",
@@ -686,12 +686,12 @@ window.visualLabData = {
           "회귀 테스트"
         ],
         "diagram": {
-          "caption": "이번 반복은 작은 helper 분리와 같은 Service 단위 테스트까지이며 feature-based package 이동은 안전망 이후의 별도 선택지입니다.",
+          "caption": "helper 하나를 분리한 뒤 같은 Service 테스트를 재실행하고, package 이동은 후속 작업으로 남깁니다.",
           "lanes": [
             {
               "id": "current-refactor-scope",
               "label": "현재 테스트로 닫는 범위",
-              "description": "검증 가능한 한 번의 구조 변경만 적용하고 같은 테스트로 닫습니다.",
+              "description": "helper 하나와 동일 테스트로 현재 반복을 닫습니다.",
               "steps": [
                 {
                   "from": "before-service",
@@ -785,8 +785,8 @@ window.visualLabData = {
             "tone": "warning"
           }
         ],
-        "evidence": "feature-based package 이동은 테스트 안전망을 만든 뒤 검토할 후속 선택지이며 이번 직접 범위가 아닙니다.",
-        "outcome": "패키지 개편을 섞지 않고 현재 테스트로 확인 가능한 책임 분리에 집중합니다.",
+        "evidence": "현재 테스트는 Service 결과를 확인하며 feature-based package 이동의 구조 전체를 검증하지는 않습니다.",
+        "outcome": "한 번의 책임 변경을 같은 테스트로 닫은 뒤 더 넓은 구조 이동을 검토합니다.",
         "stopAfter": 1
       }
     ]
